@@ -54,5 +54,5 @@ create index food_entries_user_date_idx on public.food_entries(user_id, entry_da
 create index foods_owner_id_idx on public.foods(owner_id);
 
 -- ============ profiles hedef kolonları ============
-alter table public.profiles add column daily_calorie_goal int;
-alter table public.profiles add column daily_protein_goal int;
+alter table public.profiles add column daily_calorie_goal int check (daily_calorie_goal is null or daily_calorie_goal > 0);
+alter table public.profiles add column daily_protein_goal int check (daily_protein_goal is null or daily_protein_goal > 0);

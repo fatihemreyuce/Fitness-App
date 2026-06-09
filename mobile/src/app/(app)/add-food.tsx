@@ -14,11 +14,15 @@ export default function AddFood() {
   const [qty, setQty] = useState('100')
   const addEntry = useAddFoodEntry()
 
+  const MEAL_TYPES: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack']
   const ratio = (Number(qty) || 0) / 100
   function save() {
     if (!selected) return
     const q = Number(qty)
     if (!q || q <= 0) { Alert.alert('Geçersiz', 'Miktar 0’dan büyük olmalı'); return }
+    if (!MEAL_TYPES.includes(meal) || !/^\d{4}-\d{2}-\d{2}$/.test(date ?? '')) {
+      Alert.alert('Hata', 'Geçersiz öğün veya tarih'); return
+    }
     addEntry.mutate(
       { entry_date: date, meal_type: meal, food_id: selected.id, quantity_g: q },
       { onSuccess: () => router.back(), onError: (e) => Alert.alert('Hata', String(e)) }

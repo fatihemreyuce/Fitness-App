@@ -33,7 +33,7 @@ export default function Nutrition() {
     return t
   }, [entries])
 
-  const calGoal = goals?.daily_calorie_goal ?? 2400
+  const calGoal = goals?.daily_calorie_goal && goals.daily_calorie_goal > 0 ? goals.daily_calorie_goal : 2400
   const remaining = Math.round(calGoal - totals.calories)
 
   if (isLoading) return <Screen><Text color={colors.textMuted}>Yükleniyor...</Text></Screen>

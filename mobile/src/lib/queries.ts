@@ -223,7 +223,8 @@ export function useUpdateGoals() {
   })
 }
 
-export function entryMacros(e: FoodEntry & { food: Food }) {
+export function entryMacros(e: FoodEntry & { food: Food | null }) {
+  if (!e.food) return { calories: 0, protein: 0, carb: 0, fat: 0 }
   const r = e.quantity_g / 100
   return {
     calories: e.food.calories_per_100g * r,
