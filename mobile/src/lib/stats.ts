@@ -108,3 +108,26 @@ export function heatmap(workouts: WorkoutRow[], weeks = 6): { weekLabel: string;
   }
   return rows.map((r, i) => ({ weekLabel: i === weeks - 1 ? 'bu' : `-${weeks - 1 - i}h`, days: r.days }))
 }
+
+export type ExerciseSetRow = { reps: number; weight_kg: number; exercise: { name: string } | null }
+
+export function workoutSummary(sets: ExerciseSetRow[]): { setCount: number; volumeKg: number; exercises: string[] } {
+  const exercises: string[] = []
+  for (const s of sets) {
+    const name = s.exercise?.name ?? 'Egzersiz'
+    if (!exercises.includes(name)) exercises.push(name)
+  }
+  return { setCount: sets.length, volumeKg: workoutVolume(sets), exercises }
+}
+
+export function groupSetsByExercise<T>(sets: T[], getName: (s: T) => string): { exerciseName: string; sets: T[] }[] {
+  const groups: { exerciseName: string; sets: T[] }[] = []
+  const index = new Map<string, number>()
+  for (const s of sets) {
+    const name = getName(s)
+    let i = index.get(name)
+    if (i === undefined) { i = groups.length; index.set(name, i); groups.push({ exerciseName: name, sets: [] }) }
+    groups[i].sets.push(s)
+  }
+  return groups
+}
