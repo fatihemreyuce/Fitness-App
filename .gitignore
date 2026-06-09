@@ -12,6 +12,7 @@ node_modules/
 mobile/node_modules/
 mobile/.expo/
 mobile/dist/
+mobile/dist-check/
 mobile/.env
 
 # OS
