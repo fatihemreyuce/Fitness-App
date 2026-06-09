@@ -5,6 +5,7 @@ import { useAuth } from '../../lib/auth'
 import { Screen, Text, Card, Input, Button } from '../../components/ui'
 import { spacing } from '../../theme'
 import { useGoals, useUpdateGoals } from '../../lib/queries'
+import { StatsSection } from '../../components/StatsSection'
 
 export default function Profile() {
   const { session } = useAuth()
@@ -50,6 +51,8 @@ export default function Profile() {
           <Button title={updateGoals.isPending ? 'Kaydediliyor...' : 'Hedefleri Kaydet'} onPress={saveGoals} disabled={updateGoals.isPending} />
         </View>
       </Card>
+
+      <StatsSection />
 
       <Button title="Çıkış Yap" variant="ghost" onPress={() => supabase.auth.signOut()} />
     </Screen>
