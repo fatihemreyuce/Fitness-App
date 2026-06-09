@@ -2,6 +2,7 @@
   "expo": {
     "name": "Fitness",
     "slug": "mobile",
+    "owner": "faith_emr",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -41,6 +42,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "3187ba70-e72d-4c5b-8371-16e690841783"
+      }
     }
   }
 }
