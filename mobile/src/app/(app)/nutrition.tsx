@@ -1,15 +1,16 @@
 import { useMemo, useState } from 'react'
 import { Pressable, View } from 'react-native'
 import { useRouter } from 'expo-router'
+import { Ionicons } from '@expo/vector-icons'
 import { Screen, Text, Card, ProgressBar, StatChip } from '../../components/ui'
 import { colors, spacing } from '../../theme'
 import { useDayEntries, useGoals, entryMacros, type MealType } from '../../lib/queries'
 
-const MEALS: { type: MealType; label: string }[] = [
-  { type: 'breakfast', label: '🍳 Kahvaltı' },
-  { type: 'lunch', label: '☀️ Öğle' },
-  { type: 'dinner', label: '🌙 Akşam' },
-  { type: 'snack', label: '🍎 Ara' },
+const MEALS: { type: MealType; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { type: 'breakfast', label: 'Kahvaltı', icon: 'cafe' },
+  { type: 'lunch', label: 'Öğle', icon: 'sunny' },
+  { type: 'dinner', label: 'Akşam', icon: 'moon' },
+  { type: 'snack', label: 'Ara', icon: 'fast-food' },
 ]
 
 function todayISO() {
@@ -64,7 +65,10 @@ export default function Nutrition() {
         return (
           <View key={meal.type} style={{ marginBottom: spacing.lg }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm }}>
-              <Text variant="subtitle">{meal.label}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                <Ionicons name={meal.icon} size={18} color={colors.accent} />
+                <Text variant="subtitle">{meal.label}</Text>
+              </View>
               <Pressable onPress={() => router.push(`/(app)/add-food?meal=${meal.type}&date=${date}`)}>
                 <Text variant="label" color={colors.accent}>+ Ekle  ({Math.round(cal)} kcal)</Text>
               </Pressable>
