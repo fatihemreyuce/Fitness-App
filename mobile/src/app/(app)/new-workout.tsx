@@ -4,6 +4,8 @@ import { useRouter } from 'expo-router'
 import { Screen, Text, Input, Button } from '../../components/ui'
 import { colors, spacing, radius } from '../../theme'
 import { useExercises, useCreateWorkout, type Exercise } from '../../lib/queries'
+import { groupSetsByExercise } from '../../lib/stats'
+import { ExerciseSetGroup } from '../../components/workouts/ExerciseSetGroup'
 
 type DraftSet = { exercise_id: string; exercise_name: string; reps: number; weight_kg: number }
 
@@ -20,6 +22,10 @@ export default function NewWorkout() {
     if (!selected || !reps) { Alert.alert('Eksik', 'Egzersiz ve tekrar gerekli'); return }
     setSets((prev) => [...prev, { exercise_id: selected.id, exercise_name: selected.name, reps: Number(reps), weight_kg: Number(weight) || 0 }])
     setReps(''); setWeight('')
+  }
+
+  function removeSet(globalIndex: number) {
+    setSets((prev) => prev.filter((_, i) => i !== globalIndex))
   }
 
   function save() {
@@ -44,18 +50,30 @@ export default function NewWorkout() {
       <View style={{ flexDirection: 'row', gap: spacing.sm, marginVertical: spacing.md }}>
         <Input placeholder="Tekrar" keyboardType="numeric" value={reps} onChangeText={setReps} style={{ flex: 1 }} />
         <Input placeholder="Kilo (kg)" keyboardType="numeric" value={weight} onChangeText={setWeight} style={{ flex: 1 }} />
-        <Button title="Set Ekle" onPress={addSet} />
+        <Button icon="add" title="Set" onPress={addSet} />
       </View>
       <FlatList
-        style={{ flex: 1 }} data={sets} keyExtractor={(_, i) => String(i)}
+        style={{ flex: 1 }}
+        data={groupSetsByExercise(sets.map((s, i) => ({ ...s, _i: i })), (s) => s.exercise_name)}
+        keyExtractor={(g) => g.exerciseName}
         ListEmptyComponent={<Text color={colors.textMuted}>Henüz set eklenmedi.</Text>}
-        renderItem={({ item, index }) => (
-          <Text variant="body" style={{ paddingVertical: spacing.sm, borderBottomWidth: 1, borderColor: colors.border }}>
-            {index + 1}. {item.exercise_name} — {item.reps} tekrar × {item.weight_kg} kg
-          </Text>
+        renderItem={({ item }) => (
+          <ExerciseSetGroup
+            exerciseName={item.exerciseName}
+            sets={item.sets}
+            onDeleteSet={(gi) => removeSet(item.sets[gi]._i)}
+          />
         )}
       />
-      <Button title={createWorkout.isPending ? 'Kaydediliyor...' : 'Antrenmanı Kaydet'} onPress={save} disabled={createWorkout.isPending} style={{ marginTop: spacing.sm }} />
+      {sets.length > 0 ? (
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#c8ff0012', borderWidth: 1, borderColor: '#c8ff0033', borderRadius: radius.md, paddingVertical: 10, paddingHorizontal: 12, marginVertical: spacing.sm }}>
+          <Text variant="label">Toplam</Text>
+          <Text variant="body" color={colors.accent} style={{ fontWeight: '700' }}>
+            {sets.length} set · {(sets.reduce((sum, s) => sum + s.reps * s.weight_kg, 0) / 1000).toFixed(1)} t
+          </Text>
+        </View>
+      ) : null}
+      <Button icon="checkmark" title={createWorkout.isPending ? 'Kaydediliyor...' : 'Antrenmanı Kaydet'} onPress={save} disabled={createWorkout.isPending} style={{ marginTop: spacing.sm }} />
     </Screen>
   )
 }
