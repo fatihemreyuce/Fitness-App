@@ -15,6 +15,9 @@ mobile/dist/
 mobile/dist-check/
 mobile/.env
 
+# Brainstorming görsel companion
+.superpowers/
+
 # OS
 .DS_Store
 Thumbs.db
