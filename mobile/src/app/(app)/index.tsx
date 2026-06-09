@@ -1,8 +1,10 @@
-import { FlatList, Pressable } from 'react-native'
+import { FlatList } from 'react-native'
 import { useRouter } from 'expo-router'
-import { Screen, Text, Card, Button } from '../../components/ui'
+import { Screen, Text, Button } from '../../components/ui'
 import { colors, spacing } from '../../theme'
 import { useWorkouts } from '../../lib/queries'
+import { workoutSummary } from '../../lib/stats'
+import { WorkoutCard } from '../../components/workouts/WorkoutCard'
 
 export default function Workouts() {
   const { data: workouts, isLoading, refetch } = useWorkouts()
@@ -13,7 +15,7 @@ export default function Workouts() {
   return (
     <Screen>
       <Text variant="title" style={{ marginBottom: spacing.md }}>Antrenmanlar</Text>
-      <Button title="+ Yeni Antrenman" onPress={() => router.push('/(app)/new-workout')} />
+      <Button icon="add" title="Yeni Antrenman" onPress={() => router.push('/(app)/new-workout')} />
       <FlatList
         style={{ marginTop: spacing.lg }}
         data={workouts}
@@ -21,14 +23,18 @@ export default function Workouts() {
         onRefresh={refetch}
         refreshing={isLoading}
         ListEmptyComponent={<Text color={colors.textMuted}>Henüz antrenman yok.</Text>}
-        renderItem={({ item }) => (
-          <Pressable onPress={() => router.push(`/(app)/workout/${item.id}`)} style={{ marginBottom: spacing.sm }}>
-            <Card style={{ padding: spacing.md }}>
-              <Text variant="body">{new Date(item.started_at).toLocaleString('tr-TR')}</Text>
-              {item.notes ? <Text variant="label">{item.notes}</Text> : null}
-            </Card>
-          </Pressable>
-        )}
+        renderItem={({ item }) => {
+          const s = workoutSummary(item.workout_sets ?? [])
+          return (
+            <WorkoutCard
+              date={new Date(item.started_at)}
+              exercises={s.exercises}
+              setCount={s.setCount}
+              volumeKg={s.volumeKg}
+              onPress={() => router.push(`/(app)/workout/${item.id}`)}
+            />
+          )
+        }}
       />
     </Screen>
   )
