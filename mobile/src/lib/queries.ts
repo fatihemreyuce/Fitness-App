@@ -55,14 +55,31 @@ export function useAddExercise() {
 }
 
 // --- Antrenmanlar ---
+export type WorkoutWithSets = Workout & {
+  workout_sets: { reps: number; weight_kg: number; exercise: { name: string } | null }[]
+}
+
 export function useWorkouts() {
   return useQuery({
     queryKey: ['workouts'],
-    queryFn: async (): Promise<Workout[]> => {
+    queryFn: async (): Promise<WorkoutWithSets[]> => {
       const { data, error } = await supabase
-        .from('workouts').select('*').order('started_at', { ascending: false })
+        .from('workouts')
+        .select('*, workout_sets(reps, weight_kg, exercise:exercises(name))')
+        .order('started_at', { ascending: false })
       if (error) throw error
-      return data
+      return (data ?? []) as unknown as WorkoutWithSets[]
+    },
+  })
+}
+
+export function useWorkout(id: string) {
+  return useQuery({
+    queryKey: ['workout', id],
+    queryFn: async (): Promise<{ started_at: string }> => {
+      const { data, error } = await supabase.from('workouts').select('started_at').eq('id', id).single()
+      if (error) throw error
+      return data as { started_at: string }
     },
   })
 }
