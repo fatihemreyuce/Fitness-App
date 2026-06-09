@@ -12,7 +12,7 @@ create policy "profiles_select_own" on public.profiles
 create policy "profiles_insert_own" on public.profiles
   for insert with check (auth.uid() = id);
 create policy "profiles_update_own" on public.profiles
-  for update using (auth.uid() = id);
+  for update using (auth.uid() = id) with check (auth.uid() = id);
 
 -- ============ exercises ============
 create table public.exercises (
@@ -31,7 +31,7 @@ create policy "exercises_select_public_or_own" on public.exercises
 create policy "exercises_insert_own" on public.exercises
   for insert with check (owner_id = auth.uid());
 create policy "exercises_update_own" on public.exercises
-  for update using (owner_id = auth.uid());
+  for update using (owner_id = auth.uid()) with check (owner_id = auth.uid());
 create policy "exercises_delete_own" on public.exercises
   for delete using (owner_id = auth.uid());
 
@@ -50,7 +50,7 @@ create policy "workouts_select_own" on public.workouts
 create policy "workouts_insert_own" on public.workouts
   for insert with check (user_id = auth.uid());
 create policy "workouts_update_own" on public.workouts
-  for update using (user_id = auth.uid());
+  for update using (user_id = auth.uid()) with check (user_id = auth.uid());
 create policy "workouts_delete_own" on public.workouts
   for delete using (user_id = auth.uid());
 
@@ -59,9 +59,9 @@ create table public.workout_sets (
   id uuid primary key default gen_random_uuid(),
   workout_id uuid not null references public.workouts(id) on delete cascade,
   exercise_id uuid not null references public.exercises(id),
-  set_number int not null,
-  reps int not null,
-  weight_kg numeric not null default 0,
+  set_number int not null check (set_number > 0),
+  reps int not null check (reps >= 0),
+  weight_kg numeric not null default 0 check (weight_kg >= 0),
   created_at timestamptz not null default now()
 );
 alter table public.workout_sets enable row level security;
@@ -72,13 +72,21 @@ create policy "sets_select_via_workout" on public.workout_sets
     select 1 from public.workouts w
     where w.id = workout_id and w.user_id = auth.uid()));
 create policy "sets_insert_via_workout" on public.workout_sets
-  for insert with check (exists (
-    select 1 from public.workouts w
-    where w.id = workout_id and w.user_id = auth.uid()));
+  for insert with check (
+    exists (select 1 from public.workouts w
+            where w.id = workout_id and w.user_id = auth.uid())
+    and exists (select 1 from public.exercises e
+            where e.id = exercise_id and (e.owner_id is null or e.owner_id = auth.uid())));
 create policy "sets_update_via_workout" on public.workout_sets
-  for update using (exists (
+  for update
+  using (exists (
     select 1 from public.workouts w
-    where w.id = workout_id and w.user_id = auth.uid()));
+    where w.id = workout_id and w.user_id = auth.uid()))
+  with check (
+    exists (select 1 from public.workouts w
+            where w.id = workout_id and w.user_id = auth.uid())
+    and exists (select 1 from public.exercises e
+            where e.id = exercise_id and (e.owner_id is null or e.owner_id = auth.uid())));
 create policy "sets_delete_via_workout" on public.workout_sets
   for delete using (exists (
     select 1 from public.workouts w
