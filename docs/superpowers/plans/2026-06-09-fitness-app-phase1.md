@@ -18,6 +18,8 @@
 > 3. **Port çakışması:** Makinede başka bir Supabase projesi ("tracker") çalışıyordu; `supabase stop --project-id tracker` ile geçici durduruldu. Aynı anda iki proje çalıştırmak için config.toml'da portları değiştirmek gerekir.
 > 4. **Node sürümü:** Makinede Node v25 (LTS değil) kurulu. Backend için sorun çıkarmadı; Expo tarafında sorun olursa Node 22 LTS'e geçilecek.
 > 5. **Google OAuth ertelendi:** Önce e-posta/şifre ile çalışan uygulama kuruldu; Google OAuth (Bölüm 3) sonraya bırakıldı.
+> 6. **Cihaz bağlantısı + buluta geçiş:** Fiziksel telefonda yerel Metro/Supabase'e bağlanmak bu ortamda mümkün olmadı: Wi-Fi LAN birden çok ağda cihaz izolasyonu/güvenlik duvarı (Public profil) yüzünden engellendi, Expo tüneli (ngrok) "remote gone away" ile koptu, USB'de Windows telefonu görmedi (ADB sürücüsü/kablo). Çözüm: **Supabase'i ücretsiz bulut projesine** taşıdık (`cloud-setup.sql` panelde çalıştırıldı) ve uygulamayı **EAS Build ile standalone APK** olarak derledik. Böylece telefon yalnızca internete bağlanıyor; yerel ağ/USB hiç gerekmiyor.
+> 7. **Yapılandırma:** `mobile/.env` ve `mobile/eas.json` bulut Supabase URL + anon (publishable) anahtarını içerir (anon anahtarı istemciye gömülür, herkese açıktır). `app.json`: `owner=faith_emr`, `package=com.collbrai.fitness`, EAS `projectId`. APK profili: `eas.json` → `preview` (`buildType: apk`, `distribution: internal`).
 
 ---
 
