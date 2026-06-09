@@ -1,0 +1,19 @@
+# Gizli ortam değişkenleri
+.env
+.env.local
+.env.*.local
+
+# Supabase yerel geçici dosyaları
+supabase/.branches
+supabase/.temp
+
+# Node / Expo (mobile)
+node_modules/
+mobile/node_modules/
+mobile/.expo/
+mobile/dist/
+mobile/.env
+
+# OS
+.DS_Store
+Thumbs.db
