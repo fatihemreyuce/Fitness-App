@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Alert, FlatList, Pressable, View } from 'react-native'
 import { useLocalSearchParams, useRouter, Link } from 'expo-router'
+import { Ionicons } from '@expo/vector-icons'
 import { Screen, Text, Card, Input, Button } from '../../components/ui'
 import { colors, spacing } from '../../theme'
 import { useFoods, useAddFoodEntry, type Food, type MealType } from '../../lib/queries'
@@ -44,11 +45,19 @@ export default function AddFood() {
         renderItem={({ item }) => (
           <Pressable onPress={() => setSelected(item)}>
             <Card style={{ padding: spacing.md, marginBottom: spacing.sm, borderColor: selected?.id === item.id ? colors.accent : colors.border }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Text variant="body">{item.name} {item.owner_id ? '⭐' : ''}</Text>
-                <Text variant="body" color={colors.accent}>{Math.round(item.calories_per_100g)}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <Ionicons name="flame" size={14} color={colors.accent} />
+                  <Text variant="body" color={colors.accent}>{Math.round(item.calories_per_100g)} kcal</Text>
+                </View>
               </View>
-              <Text variant="label">100g · P {item.protein_g} · K {item.carb_g} · Y {item.fat_g}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginTop: 4 }}>
+                <MacroDot color={colors.protein} label={`P ${item.protein_g}g`} />
+                <MacroDot color={colors.carb} label={`K ${item.carb_g}g`} />
+                <MacroDot color={colors.fat} label={`Y ${item.fat_g}g`} />
+                <Text variant="label" color={colors.textFaint}>· 100g</Text>
+              </View>
             </Card>
           </Pressable>
         )}
@@ -63,9 +72,18 @@ export default function AddFood() {
               = {Math.round(selected.calories_per_100g * ratio)} kcal{'\n'}P {Math.round(selected.protein_g * ratio)}g
             </Text>
           </View>
-          <Button title={addEntry.isPending ? 'Ekleniyor...' : 'Öğüne Ekle'} onPress={save} disabled={addEntry.isPending} style={{ marginTop: spacing.md }} />
+          <Button icon="add" title={addEntry.isPending ? 'Ekleniyor...' : 'Öğüne Ekle'} onPress={save} disabled={addEntry.isPending} style={{ marginTop: spacing.md }} />
         </Card>
       )}
     </Screen>
+  )
+}
+
+function MacroDot({ color, label }: { color: string; label: string }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+      <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: color }} />
+      <Text variant="label">{label}</Text>
+    </View>
   )
 }
