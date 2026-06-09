@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from './supabase'
+import { weekStartISO, type WorkoutRow } from './stats'
 
 export type Exercise = {
   id: string
@@ -232,4 +233,39 @@ export function entryMacros(e: FoodEntry & { food: Food | null }) {
     carb: e.food.carb_g * r,
     fat: e.food.fat_g * r,
   }
+}
+
+// ============ İstatistik sorguları ============
+export function useWorkoutStats() {
+  return useQuery({
+    queryKey: ['workout_stats'],
+    queryFn: async (): Promise<WorkoutRow[]> => {
+      const { data, error } = await supabase
+        .from('workouts')
+        .select('started_at, workout_sets(reps, weight_kg)')
+        .order('started_at')
+      if (error) throw error
+      return (data ?? []) as unknown as WorkoutRow[]
+    },
+  })
+}
+
+export function useNutritionWeek(today: string) {
+  return useQuery({
+    queryKey: ['nutrition_week', today],
+    queryFn: async (): Promise<{ entry_date: string; calories: number }[]> => {
+      const start = weekStartISO(today, 7)
+      const { data, error } = await supabase
+        .from('food_entries')
+        .select('entry_date, quantity_g, food:foods(calories_per_100g)')
+        .gte('entry_date', start)
+        .lte('entry_date', today)
+      if (error) throw error
+      type Row = { entry_date: string; quantity_g: number; food: { calories_per_100g: number } | null }
+      return ((data ?? []) as unknown as Row[]).map((r) => ({
+        entry_date: r.entry_date,
+        calories: r.food ? r.food.calories_per_100g * (r.quantity_g / 100) : 0,
+      }))
+    },
+  })
 }
