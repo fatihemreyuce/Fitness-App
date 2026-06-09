@@ -12,6 +12,13 @@
 
 > **Platform notu:** Tüm komutlar Windows 11 + PowerShell içindir. Backend `C:\Users\fatih\fitness-app` içinde, mobil uygulama ise `C:\Users\fatih\fitness-app\mobile` içinde olacaktır.
 
+> **⚠️ Uygulama sırasında ortaya çıkan sapmalar (2026-06-09):**
+> 1. **Yeni anahtar formatı:** Kurulu Supabase CLI (v2.98.2), eski `anon key` (JWT `eyJ...`) yerine **`sb_publishable_...`** ve **`sb_secret_...`** anahtarları veriyor. Mobilde `EXPO_PUBLIC_SUPABASE_ANON_KEY` olarak **publishable** anahtarı kullanılacak. `sb_secret_...` gizlidir, istemcide ASLA kullanılmaz.
+> 2. **RLS güvenlik düzeltmesi:** İlk şemadaki UPDATE politikaları yalnızca `USING` içeriyordu; bu, bir kullanıcının satır sahipliğini değiştirmesine (örn. `exercises.owner_id`'yi NULL yapıp özel egzersizi "herkese açık"a çevirmesine) izin veren bir açıktı. Tüm UPDATE politikalarına `WITH CHECK` eklendi, set politikalarına egzersiz-görünürlük kontrolü ve `reps/weight_kg/set_number` için CHECK kısıtları eklendi. (Bkz. commit `83714d7`.)
+> 3. **Port çakışması:** Makinede başka bir Supabase projesi ("tracker") çalışıyordu; `supabase stop --project-id tracker` ile geçici durduruldu. Aynı anda iki proje çalıştırmak için config.toml'da portları değiştirmek gerekir.
+> 4. **Node sürümü:** Makinede Node v25 (LTS değil) kurulu. Backend için sorun çıkarmadı; Expo tarafında sorun olursa Node 22 LTS'e geçilecek.
+> 5. **Google OAuth ertelendi:** Önce e-posta/şifre ile çalışan uygulama kuruldu; Google OAuth (Bölüm 3) sonraya bırakıldı.
+
 ---
 
 ## Dosya Yapısı
