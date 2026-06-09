@@ -1,35 +1,35 @@
-import { Button, FlatList, Pressable, Text, View } from 'react-native'
+import { FlatList, Pressable } from 'react-native'
 import { useRouter } from 'expo-router'
+import { Screen, Text, Card, Button } from '../../components/ui'
+import { colors, spacing } from '../../theme'
 import { useWorkouts } from '../../lib/queries'
 
 export default function Workouts() {
   const { data: workouts, isLoading, refetch } = useWorkouts()
   const router = useRouter()
 
-  if (isLoading) return <Text style={{ padding: 24 }}>Yükleniyor...</Text>
+  if (isLoading) return <Screen><Text color={colors.textMuted}>Yükleniyor...</Text></Screen>
 
   return (
-    <View style={{ flex: 1, padding: 16 }}>
+    <Screen>
+      <Text variant="title" style={{ marginBottom: spacing.md }}>Antrenmanlar</Text>
       <Button title="+ Yeni Antrenman" onPress={() => router.push('/(app)/new-workout')} />
       <FlatList
-        style={{ marginTop: 16 }}
+        style={{ marginTop: spacing.lg }}
         data={workouts}
         keyExtractor={(item) => item.id}
         onRefresh={refetch}
         refreshing={isLoading}
-        ListEmptyComponent={<Text style={{ color: '#666' }}>Henüz antrenman yok.</Text>}
+        ListEmptyComponent={<Text color={colors.textMuted}>Henüz antrenman yok.</Text>}
         renderItem={({ item }) => (
-          <Pressable
-            onPress={() => router.push(`/(app)/workout/${item.id}`)}
-            style={{ paddingVertical: 14, borderBottomWidth: 1, borderColor: '#eee' }}
-          >
-            <Text style={{ fontSize: 16 }}>
-              {new Date(item.started_at).toLocaleString('tr-TR')}
-            </Text>
-            {item.notes ? <Text style={{ color: '#666' }}>{item.notes}</Text> : null}
+          <Pressable onPress={() => router.push(`/(app)/workout/${item.id}`)} style={{ marginBottom: spacing.sm }}>
+            <Card style={{ padding: spacing.md }}>
+              <Text variant="body">{new Date(item.started_at).toLocaleString('tr-TR')}</Text>
+              {item.notes ? <Text variant="label">{item.notes}</Text> : null}
+            </Card>
           </Pressable>
         )}
       />
-    </View>
+    </Screen>
   )
 }

@@ -107,3 +107,128 @@ export function useCreateWorkout() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['workouts'] }),
   })
 }
+
+// ============ Beslenme ============
+export type Food = {
+  id: string
+  name: string
+  brand: string | null
+  calories_per_100g: number
+  protein_g: number
+  carb_g: number
+  fat_g: number
+  owner_id: string | null
+}
+
+export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack'
+
+export type FoodEntry = {
+  id: string
+  user_id: string
+  entry_date: string
+  meal_type: MealType
+  food_id: string
+  quantity_g: number
+}
+
+export function useFoods(search: string) {
+  return useQuery({
+    queryKey: ['foods', search],
+    queryFn: async (): Promise<Food[]> => {
+      let q = supabase.from('foods').select('*').order('name').limit(50)
+      if (search.trim()) q = q.ilike('name', `%${search.trim()}%`)
+      const { data, error } = await q
+      if (error) throw error
+      return data
+    },
+  })
+}
+
+export function useAddCustomFood() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (input: { name: string; calories_per_100g: number; protein_g: number; carb_g: number; fat_g: number }) => {
+      const { data: userData } = await supabase.auth.getUser()
+      const { data, error } = await supabase.from('foods')
+        .insert({ ...input, owner_id: userData.user!.id }).select().single()
+      if (error) throw error
+      return data as Food
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['foods'] }),
+  })
+}
+
+export function useDayEntries(date: string) {
+  return useQuery({
+    queryKey: ['food_entries', date],
+    queryFn: async (): Promise<(FoodEntry & { food: Food })[]> => {
+      const { data, error } = await supabase
+        .from('food_entries')
+        .select('*, food:foods(*)')
+        .eq('entry_date', date)
+        .order('created_at')
+      if (error) throw error
+      return data as unknown as (FoodEntry & { food: Food })[]
+    },
+  })
+}
+
+export function useAddFoodEntry() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (input: { entry_date: string; meal_type: MealType; food_id: string; quantity_g: number }) => {
+      const { data: userData } = await supabase.auth.getUser()
+      const { error } = await supabase.from('food_entries').insert({ ...input, user_id: userData.user!.id })
+      if (error) throw error
+    },
+    onSuccess: (_d, vars) => qc.invalidateQueries({ queryKey: ['food_entries', vars.entry_date] }),
+  })
+}
+
+export function useDeleteFoodEntry(date: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('food_entries').delete().eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['food_entries', date] }),
+  })
+}
+
+export type Goals = { daily_calorie_goal: number | null; daily_protein_goal: number | null }
+
+export function useGoals() {
+  return useQuery({
+    queryKey: ['goals'],
+    queryFn: async (): Promise<Goals> => {
+      const { data: userData } = await supabase.auth.getUser()
+      const { data, error } = await supabase.from('profiles')
+        .select('daily_calorie_goal, daily_protein_goal').eq('id', userData.user!.id).single()
+      if (error) throw error
+      return data as Goals
+    },
+  })
+}
+
+export function useUpdateGoals() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (input: Goals) => {
+      const { data: userData } = await supabase.auth.getUser()
+      const { error } = await supabase.from('profiles').update(input).eq('id', userData.user!.id)
+      if (error) throw error
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['goals'] }),
+  })
+}
+
+export function entryMacros(e: FoodEntry & { food: Food }) {
+  const r = e.quantity_g / 100
+  return {
+    calories: e.food.calories_per_100g * r,
+    protein: e.food.protein_g * r,
+    carb: e.food.carb_g * r,
+    fat: e.food.fat_g * r,
+  }
+}

@@ -1,11 +1,18 @@
 import { useEffect, useState } from 'react'
-import { Button, Text, View } from 'react-native'
+import { Alert, View } from 'react-native'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/auth'
+import { Screen, Text, Card, Input, Button } from '../../components/ui'
+import { spacing } from '../../theme'
+import { useGoals, useUpdateGoals } from '../../lib/queries'
 
 export default function Profile() {
   const { session } = useAuth()
   const [displayName, setDisplayName] = useState<string | null>(null)
+  const { data: goals } = useGoals()
+  const updateGoals = useUpdateGoals()
+  const [cal, setCal] = useState('')
+  const [prot, setProt] = useState('')
 
   useEffect(() => {
     if (!session) return
@@ -13,12 +20,38 @@ export default function Profile() {
       .then(({ data }) => setDisplayName(data?.display_name ?? null))
   }, [session])
 
+  useEffect(() => {
+    if (goals) { setCal(goals.daily_calorie_goal?.toString() ?? ''); setProt(goals.daily_protein_goal?.toString() ?? '') }
+  }, [goals])
+
+  function saveGoals() {
+    updateGoals.mutate(
+      { daily_calorie_goal: cal ? Number(cal) : null, daily_protein_goal: prot ? Number(prot) : null },
+      { onSuccess: () => Alert.alert('Kaydedildi', 'Hedeflerin güncellendi'), onError: (e) => Alert.alert('Hata', String(e)) }
+    )
+  }
+
   return (
-    <View style={{ flex: 1, justifyContent: 'center', padding: 24, gap: 12 }}>
-      <Text style={{ fontSize: 20, fontWeight: '600' }}>Profil</Text>
-      <Text>Ad: {displayName ?? '...'}</Text>
-      <Text>E-posta: {session?.user.email}</Text>
-      <Button title="Çıkış Yap" onPress={() => supabase.auth.signOut()} />
-    </View>
+    <Screen scroll>
+      <Text variant="title" style={{ marginBottom: spacing.lg }}>Profil</Text>
+
+      <Card style={{ marginBottom: spacing.lg }}>
+        <Text variant="label">AD</Text>
+        <Text variant="subtitle" style={{ marginBottom: spacing.md }}>{displayName ?? '...'}</Text>
+        <Text variant="label">E-POSTA</Text>
+        <Text variant="subtitle">{session?.user.email}</Text>
+      </Card>
+
+      <Card style={{ marginBottom: spacing.lg }}>
+        <Text variant="subtitle" style={{ marginBottom: spacing.md }}>Günlük Hedefler</Text>
+        <View style={{ gap: spacing.md }}>
+          <Input placeholder="Kalori hedefi (kcal)" keyboardType="numeric" value={cal} onChangeText={setCal} />
+          <Input placeholder="Protein hedefi (g)" keyboardType="numeric" value={prot} onChangeText={setProt} />
+          <Button title={updateGoals.isPending ? 'Kaydediliyor...' : 'Hedefleri Kaydet'} onPress={saveGoals} disabled={updateGoals.isPending} />
+        </View>
+      </Card>
+
+      <Button title="Çıkış Yap" variant="ghost" onPress={() => supabase.auth.signOut()} />
+    </Screen>
   )
 }
