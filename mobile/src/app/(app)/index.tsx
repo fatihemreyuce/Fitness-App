@@ -5,6 +5,7 @@ import { colors, spacing } from '../../theme'
 import { useWorkouts } from '../../lib/queries'
 import { workoutSummary } from '../../lib/stats'
 import { WorkoutCard } from '../../components/workouts/WorkoutCard'
+import { TemplatesSection } from '../../components/workouts/TemplatesSection'
 
 export default function Workouts() {
   const { data: workouts, isLoading, refetch } = useWorkouts()
@@ -16,6 +17,7 @@ export default function Workouts() {
     <Screen>
       <Text variant="title" style={{ marginBottom: spacing.md }}>Antrenmanlar</Text>
       <Button icon="add" title="Yeni Antrenman" onPress={() => router.push('/(app)/new-workout')} />
+      <TemplatesSection onStart={(id) => router.push(`/(app)/new-workout?templateId=${id}`)} />
       <FlatList
         style={{ marginTop: spacing.lg }}
         data={workouts}
