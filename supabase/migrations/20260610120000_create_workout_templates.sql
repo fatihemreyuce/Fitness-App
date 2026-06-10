@@ -42,8 +42,11 @@ create policy "tpl_sets_update_via_template" on public.workout_template_sets
   for update
   using (exists (select 1 from public.workout_templates t
             where t.id = template_id and t.user_id = auth.uid()))
-  with check (exists (select 1 from public.workout_templates t
-            where t.id = template_id and t.user_id = auth.uid()));
+  with check (
+    exists (select 1 from public.workout_templates t
+            where t.id = template_id and t.user_id = auth.uid())
+    and exists (select 1 from public.exercises e
+            where e.id = exercise_id and (e.owner_id is null or e.owner_id = auth.uid())));
 create policy "tpl_sets_delete_via_template" on public.workout_template_sets
   for delete using (exists (
     select 1 from public.workout_templates t
