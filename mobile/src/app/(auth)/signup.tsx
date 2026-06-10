@@ -3,6 +3,7 @@ import { Alert, View } from 'react-native'
 import { Link } from 'expo-router'
 import { supabase } from '../../lib/supabase'
 import { Screen, Text, Input, Button } from '../../components/ui'
+import { GoogleSignInButton } from '../../components/GoogleSignInButton'
 import { colors, spacing } from '../../theme'
 
 export default function Signup() {
@@ -25,6 +26,7 @@ export default function Signup() {
         <Input placeholder="E-posta" autoCapitalize="none" keyboardType="email-address" value={email} onChangeText={setEmail} />
         <Input placeholder="Şifre (en az 6 karakter)" secureTextEntry value={password} onChangeText={setPassword} />
         <Button title={loading ? '...' : 'Kayıt Ol'} onPress={signUp} disabled={loading} />
+        <GoogleSignInButton />
         <Link href="/(auth)/login" style={{ marginTop: spacing.sm }}>
           <Text variant="label" color={colors.accent} style={{ textAlign: 'center' }}>Zaten hesabın var mı? Giriş yap</Text>
         </Link>
