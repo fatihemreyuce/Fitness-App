@@ -131,3 +131,33 @@ export function groupSetsByExercise<T>(sets: T[], getName: (s: T) => string): { 
   }
   return groups
 }
+
+// ============ Şablon draft çözümlemesi (saf) ============
+export type DraftSet = { exercise_id: string; exercise_name: string; reps: number; weight_kg: number }
+export type TemplateSetRow = {
+  set_number: number
+  target_reps: number
+  target_weight_kg: number
+  exercise: { id: string; name: string } | null
+}
+
+// Şablon setlerini new-workout draft'ına çevirir (B/akıllı model):
+// kilo = o egzersizin son antrenmandaki kilosu (lastWeightByExercise), yoksa şablon yedeği.
+// Silinmiş egzersiz (exercise null) atlanır. Setler set_number sırasıyla beklenir.
+export function templateDraftSets(
+  sets: TemplateSetRow[],
+  lastWeightByExercise: Map<string, number>,
+): DraftSet[] {
+  const out: DraftSet[] = []
+  for (const s of sets) {
+    if (!s.exercise) continue
+    const last = lastWeightByExercise.get(s.exercise.id)
+    out.push({
+      exercise_id: s.exercise.id,
+      exercise_name: s.exercise.name,
+      reps: s.target_reps,
+      weight_kg: last ?? s.target_weight_kg,
+    })
+  }
+  return out
+}

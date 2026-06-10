@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from './supabase'
-import { weekStartISO, type WorkoutRow } from './stats'
+import { weekStartISO, templateDraftSets, type WorkoutRow, type TemplateSetRow, type DraftSet } from './stats'
 
 export type Exercise = {
   id: string
@@ -283,6 +283,102 @@ export function useNutritionWeek(today: string) {
         entry_date: r.entry_date,
         calories: r.food ? r.food.calories_per_100g * (r.quantity_g / 100) : 0,
       }))
+    },
+  })
+}
+
+// ============ Antrenman Şablonları ============
+export type TemplateWithSets = {
+  id: string
+  name: string
+  created_at: string
+  workout_template_sets: { set_number: number; exercise: { name: string } | null }[]
+}
+
+export function useTemplates() {
+  return useQuery({
+    queryKey: ['templates'],
+    queryFn: async (): Promise<TemplateWithSets[]> => {
+      const { data, error } = await supabase
+        .from('workout_templates' as any)
+        .select('id, name, created_at, workout_template_sets(set_number, exercise:exercises(name))')
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      return (data ?? []) as unknown as TemplateWithSets[]
+    },
+  })
+}
+
+export function useCreateTemplateFromWorkout() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (input: {
+      name: string
+      sets: { exercise_id: string; set_number: number; target_reps: number; target_weight_kg: number }[]
+    }) => {
+      const { data: userData } = await supabase.auth.getUser()
+      const { data: tpl, error: tErr } = await supabase
+        .from('workout_templates' as any)
+        .insert({ user_id: userData.user!.id, name: input.name })
+        .select()
+        .single()
+      if (tErr) throw tErr
+      if (input.sets.length > 0) {
+        const rows = input.sets.map((s) => ({ ...s, template_id: (tpl as any).id }))
+        const { error: sErr } = await supabase.from('workout_template_sets' as any).insert(rows)
+        if (sErr) throw sErr
+      }
+      return tpl
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['templates'] }),
+  })
+}
+
+export function useDeleteTemplate() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('workout_templates' as any).delete().eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['templates'] }),
+  })
+}
+
+// Şablonu new-workout draft'ına çözer (B modeli: son kiloları geçmişten çeker).
+export function useTemplateDraft(templateId: string | undefined) {
+  return useQuery({
+    queryKey: ['template_draft', templateId],
+    enabled: !!templateId,
+    queryFn: async (): Promise<{ name: string; draft: DraftSet[] }> => {
+      const { data: tpl, error: tErr } = await supabase
+        .from('workout_templates' as any)
+        .select('name, workout_template_sets(set_number, target_reps, target_weight_kg, exercise:exercises(id, name))')
+        .eq('id', templateId!)
+        .single()
+      if (tErr) throw tErr
+
+      const raw = (tpl as unknown as {
+        name: string
+        workout_template_sets: TemplateSetRow[]
+      })
+      const sorted = [...(raw.workout_template_sets ?? [])].sort((a, b) => a.set_number - b.set_number)
+
+      const exIds = [...new Set(sorted.map((s) => s.exercise?.id).filter(Boolean))] as string[]
+      const lastWeight = new Map<string, number>()
+      if (exIds.length > 0) {
+        const { data: hist, error: hErr } = await supabase
+          .from('workout_sets')
+          .select('exercise_id, weight_kg, created_at')
+          .in('exercise_id', exIds)
+          .order('created_at', { ascending: false })
+        if (hErr) throw hErr
+        for (const row of (hist ?? []) as { exercise_id: string; weight_kg: number }[]) {
+          if (!lastWeight.has(row.exercise_id)) lastWeight.set(row.exercise_id, row.weight_kg)
+        }
+      }
+
+      return { name: raw.name, draft: templateDraftSets(sorted, lastWeight) }
     },
   })
 }
