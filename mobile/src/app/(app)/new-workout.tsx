@@ -1,18 +1,25 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Alert, FlatList, Pressable, View } from 'react-native'
-import { useRouter } from 'expo-router'
+import { useRouter, useLocalSearchParams } from 'expo-router'
 import { Screen, Text, Input, Button } from '../../components/ui'
 import { colors, spacing, radius } from '../../theme'
-import { useExercises, useCreateWorkout, type Exercise } from '../../lib/queries'
-import { groupSetsByExercise } from '../../lib/stats'
+import { useExercises, useCreateWorkout, useTemplateDraft, type Exercise } from '../../lib/queries'
+import { groupSetsByExercise, type DraftSet } from '../../lib/stats'
 import { ExerciseSetGroup } from '../../components/workouts/ExerciseSetGroup'
-
-type DraftSet = { exercise_id: string; exercise_name: string; reps: number; weight_kg: number }
 
 export default function NewWorkout() {
   const { data: exercises } = useExercises()
   const createWorkout = useCreateWorkout()
   const router = useRouter()
+  const { templateId } = useLocalSearchParams<{ templateId?: string }>()
+  const { data: tplData } = useTemplateDraft(templateId)
+  const seeded = useRef(false)
+  useEffect(() => {
+    if (tplData && !seeded.current) {
+      setSets(tplData.draft)
+      seeded.current = true
+    }
+  }, [tplData])
   const [sets, setSets] = useState<DraftSet[]>([])
   const [selected, setSelected] = useState<Exercise | null>(null)
   const [reps, setReps] = useState('')
@@ -36,6 +43,7 @@ export default function NewWorkout() {
 
   return (
     <Screen>
+      {tplData?.name ? <Text variant="title" style={{ marginBottom: spacing.sm }}>{tplData.name}</Text> : null}
       <Text variant="subtitle" style={{ marginBottom: spacing.sm }}>Egzersiz seç</Text>
       <FlatList
         horizontal data={exercises} keyExtractor={(i) => i.id} showsHorizontalScrollIndicator={false}
