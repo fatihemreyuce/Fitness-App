@@ -300,7 +300,7 @@ export function useTemplates() {
     queryKey: ['templates'],
     queryFn: async (): Promise<TemplateWithSets[]> => {
       const { data, error } = await supabase
-        .from('workout_templates' as any)
+        .from('workout_templates')
         .select('id, name, created_at, workout_template_sets(set_number, exercise:exercises(name))')
         .order('created_at', { ascending: false })
       if (error) throw error
@@ -318,14 +318,14 @@ export function useCreateTemplateFromWorkout() {
     }) => {
       const { data: userData } = await supabase.auth.getUser()
       const { data: tpl, error: tErr } = await supabase
-        .from('workout_templates' as any)
+        .from('workout_templates')
         .insert({ user_id: userData.user!.id, name: input.name })
         .select()
         .single()
       if (tErr) throw tErr
       if (input.sets.length > 0) {
-        const rows = input.sets.map((s) => ({ ...s, template_id: (tpl as any).id }))
-        const { error: sErr } = await supabase.from('workout_template_sets' as any).insert(rows)
+        const rows = input.sets.map((s) => ({ ...s, template_id: tpl.id }))
+        const { error: sErr } = await supabase.from('workout_template_sets').insert(rows)
         if (sErr) throw sErr
       }
       return tpl
@@ -338,7 +338,7 @@ export function useDeleteTemplate() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('workout_templates' as any).delete().eq('id', id)
+      const { error } = await supabase.from('workout_templates').delete().eq('id', id)
       if (error) throw error
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['templates'] }),
@@ -352,7 +352,7 @@ export function useTemplateDraft(templateId: string | undefined) {
     enabled: !!templateId,
     queryFn: async (): Promise<{ name: string; draft: DraftSet[] }> => {
       const { data: tpl, error: tErr } = await supabase
-        .from('workout_templates' as any)
+        .from('workout_templates')
         .select('name, workout_template_sets(set_number, target_reps, target_weight_kg, exercise:exercises(id, name))')
         .eq('id', templateId!)
         .single()
