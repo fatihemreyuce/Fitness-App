@@ -382,3 +382,87 @@ export function useTemplateDraft(templateId: string | undefined) {
     },
   })
 }
+
+// ============ Kilo Takibi ============
+export type BodyWeight = {
+  id: string
+  user_id: string
+  entry_date: string
+  weight_kg: number
+  created_at: string
+}
+
+// Tüm kilo kayıtları, ARTAN entry_date (grafik kronolojik kullanır;
+// liste için tüketici .reverse() alır).
+export function useBodyWeights() {
+  return useQuery({
+    queryKey: ['body_weights'],
+    queryFn: async (): Promise<BodyWeight[]> => {
+      const { data, error } = await supabase
+        .from('body_weights')
+        .select('*')
+        .order('entry_date', { ascending: true })
+      if (error) throw error
+      return (data ?? []) as BodyWeight[]
+    },
+  })
+}
+
+// Aynı güne tekrar girişte üstüne yazar (onConflict: user_id,entry_date).
+export function useUpsertBodyWeight() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (input: { entry_date: string; weight_kg: number }) => {
+      const { data: userData } = await supabase.auth.getUser()
+      const { error } = await supabase
+        .from('body_weights')
+        .upsert({ ...input, user_id: userData.user!.id }, { onConflict: 'user_id,entry_date' })
+      if (error) throw error
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['body_weights'] }),
+  })
+}
+
+export function useDeleteBodyWeight() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('body_weights').delete().eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['body_weights'] }),
+  })
+}
+
+// Hedef kilo — yalnız profiles.target_weight_kg okur (kalori/protein hedefleri ayrı).
+export function useTargetWeight() {
+  return useQuery({
+    queryKey: ['target_weight'],
+    queryFn: async (): Promise<number | null> => {
+      const { data: userData } = await supabase.auth.getUser()
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('target_weight_kg')
+        .eq('id', userData.user!.id)
+        .single()
+      if (error) throw error
+      return (data as { target_weight_kg: number | null }).target_weight_kg
+    },
+  })
+}
+
+// Yalnız target_weight_kg günceller — useUpdateGoals'a DOKUNMAZ.
+export function useUpdateTargetWeight() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (target_weight_kg: number | null) => {
+      const { data: userData } = await supabase.auth.getUser()
+      const { error } = await supabase
+        .from('profiles')
+        .update({ target_weight_kg })
+        .eq('id', userData.user!.id)
+      if (error) throw error
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['target_weight'] }),
+  })
+}
