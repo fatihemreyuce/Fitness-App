@@ -6,6 +6,7 @@ import { Screen, Text, Card, Input, Button } from '../../components/ui'
 import { spacing } from '../../theme'
 import { useGoals, useUpdateGoals } from '../../lib/queries'
 import { StatsSection } from '../../components/StatsSection'
+import { WeightSection } from '../../components/WeightSection'
 
 export default function Profile() {
   const { session } = useAuth()
@@ -51,6 +52,8 @@ export default function Profile() {
           <Button title={updateGoals.isPending ? 'Kaydediliyor...' : 'Hedefleri Kaydet'} onPress={saveGoals} disabled={updateGoals.isPending} />
         </View>
       </Card>
+
+      <WeightSection />
 
       <StatsSection />
 
