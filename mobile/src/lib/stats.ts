@@ -161,3 +161,41 @@ export function templateDraftSets(
   }
   return out
 }
+
+// ============ Kilo takibi (saf) ============
+export type BodyWeightRow = { entry_date: string; weight_kg: number }
+
+// Güncel kilo (en yeni kayıt) + ~7 gün önceki en yakın kayda göre değişim.
+// entries herhangi bir sırada gelebilir; içeride tarihe göre sıralanır.
+// Tek kayıt veya boş → change7d null. current boşsa null.
+export function weightSummary(
+  entries: BodyWeightRow[],
+): { current: number | null; change7d: number | null } {
+  if (entries.length === 0) return { current: null, change7d: null }
+  const sorted = [...entries].sort((a, b) => a.entry_date.localeCompare(b.entry_date))
+  const last = sorted[sorted.length - 1]
+  const current = last.weight_kg
+  if (sorted.length < 2) return { current, change7d: null }
+
+  const target = parseISODate(last.entry_date).getTime() - 7 * DAY_MS
+  let best = sorted[0]
+  let bestDiff = Infinity
+  for (let i = 0; i < sorted.length - 1; i++) {
+    const diff = Math.abs(parseISODate(sorted[i].entry_date).getTime() - target)
+    if (diff < bestDiff) { bestDiff = diff; best = sorted[i] }
+  }
+  return { current, change7d: Number((current - best.weight_kg).toFixed(1)) }
+}
+
+// Grafik için: en yeni kaydın tarihinden geriye `days` günlük penceredeki
+// kayıtların kronolojik weight_kg dizisi. Saf, saat bağımlılığı yok (pencere
+// en yeni kayda göre hesaplanır). Boş giriş → [].
+export function weightChartPoints(entries: BodyWeightRow[], days = 30): number[] {
+  if (entries.length === 0) return []
+  const sorted = [...entries].sort((a, b) => a.entry_date.localeCompare(b.entry_date))
+  const lastTime = parseISODate(sorted[sorted.length - 1].entry_date).getTime()
+  const cutoff = lastTime - (days - 1) * DAY_MS
+  return sorted
+    .filter((e) => parseISODate(e.entry_date).getTime() >= cutoff)
+    .map((e) => e.weight_kg)
+}
