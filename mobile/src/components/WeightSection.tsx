@@ -102,7 +102,9 @@ export function WeightSection() {
         {target != null ? (
           <Text variant="label" style={{ marginBottom: spacing.md }}>
             🎯 Hedef {target} kg
-            {remaining != null ? ` · ${Math.abs(remaining)} kg ${remaining > 0 ? 'kaldı' : 'aşıldı'}` : ''}
+            {remaining != null && remaining !== 0
+              ? ` · ${Math.abs(remaining)} kg ${remaining > 0 ? 'kaldı' : 'aşıldı'}`
+              : remaining === 0 ? ' · ulaşıldı 🎉' : ''}
           </Text>
         ) : null}
 
