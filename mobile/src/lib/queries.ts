@@ -2,6 +2,15 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from './supabase'
 import { weekStartISO, templateDraftSets, type WorkoutRow, type TemplateSetRow, type DraftSet } from './stats'
 
+// Oturumdaki kullanıcı id'sini döndürür; oturum yoksa anlaşılır hata fırlatır.
+// (getUser() { user: null } dönebilir — non-null assertion yerine bunu kullan.)
+async function requireUserId(): Promise<string> {
+  const { data, error } = await supabase.auth.getUser()
+  if (error) throw error
+  if (!data.user) throw new Error('Oturum bulunamadı. Lütfen tekrar giriş yapın.')
+  return data.user.id
+}
+
 export type Exercise = {
   id: string
   name: string
@@ -43,10 +52,10 @@ export function useAddExercise() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (input: { name: string; muscle_group: string; equipment: string | null }) => {
-      const { data: userData } = await supabase.auth.getUser()
+      const userId = await requireUserId()
       const { error } = await supabase.from('exercises').insert({
         ...input,
-        owner_id: userData.user!.id,
+        owner_id: userId,
       })
       if (error) throw error
     },
@@ -107,10 +116,10 @@ export function useCreateWorkout() {
       notes: string | null
       sets: { exercise_id: string; set_number: number; reps: number; weight_kg: number }[]
     }) => {
-      const { data: userData } = await supabase.auth.getUser()
+      const userId = await requireUserId()
       const { data: workout, error: wErr } = await supabase
         .from('workouts')
-        .insert({ user_id: userData.user!.id, notes: input.notes, ended_at: new Date().toISOString() })
+        .insert({ user_id: userId, notes: input.notes, ended_at: new Date().toISOString() })
         .select()
         .single()
       if (wErr) throw wErr
@@ -166,12 +175,13 @@ export function useAddCustomFood() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (input: { name: string; calories_per_100g: number; protein_g: number; carb_g: number; fat_g: number }) => {
-      const { data: userData } = await supabase.auth.getUser()
+      const userId = await requireUserId()
       const { data, error } = await supabase.from('foods')
-        .insert({ ...input, owner_id: userData.user!.id }).select().single()
+        .insert({ ...input, owner_id: userId }).select().single()
       if (error) throw error
       return data as Food
     },
+    // ['foods'] prefix'iyle eşleşen TÜM key'leri ('foods' + arama param'lı) geçersiz kıl.
     onSuccess: () => qc.invalidateQueries({ queryKey: ['foods'] }),
   })
 }
@@ -195,8 +205,8 @@ export function useAddFoodEntry() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (input: { entry_date: string; meal_type: MealType; food_id: string; quantity_g: number }) => {
-      const { data: userData } = await supabase.auth.getUser()
-      const { error } = await supabase.from('food_entries').insert({ ...input, user_id: userData.user!.id })
+      const userId = await requireUserId()
+      const { error } = await supabase.from('food_entries').insert({ ...input, user_id: userId })
       if (error) throw error
     },
     onSuccess: (_d, vars) => qc.invalidateQueries({ queryKey: ['food_entries', vars.entry_date] }),
@@ -220,9 +230,9 @@ export function useGoals() {
   return useQuery({
     queryKey: ['goals'],
     queryFn: async (): Promise<Goals> => {
-      const { data: userData } = await supabase.auth.getUser()
+      const userId = await requireUserId()
       const { data, error } = await supabase.from('profiles')
-        .select('daily_calorie_goal, daily_protein_goal').eq('id', userData.user!.id).single()
+        .select('daily_calorie_goal, daily_protein_goal').eq('id', userId).single()
       if (error) throw error
       return data as Goals
     },
@@ -233,8 +243,8 @@ export function useUpdateGoals() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (input: Goals) => {
-      const { data: userData } = await supabase.auth.getUser()
-      const { error } = await supabase.from('profiles').update(input).eq('id', userData.user!.id)
+      const userId = await requireUserId()
+      const { error } = await supabase.from('profiles').update(input).eq('id', userId)
       if (error) throw error
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['goals'] }),
@@ -316,10 +326,10 @@ export function useCreateTemplateFromWorkout() {
       name: string
       sets: { exercise_id: string; set_number: number; target_reps: number; target_weight_kg: number }[]
     }) => {
-      const { data: userData } = await supabase.auth.getUser()
+      const userId = await requireUserId()
       const { data: tpl, error: tErr } = await supabase
         .from('workout_templates')
-        .insert({ user_id: userData.user!.id, name: input.name })
+        .insert({ user_id: userId, name: input.name })
         .select()
         .single()
       if (tErr) throw tErr
@@ -413,10 +423,10 @@ export function useUpsertBodyWeight() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (input: { entry_date: string; weight_kg: number }) => {
-      const { data: userData } = await supabase.auth.getUser()
+      const userId = await requireUserId()
       const { error } = await supabase
         .from('body_weights')
-        .upsert({ ...input, user_id: userData.user!.id }, { onConflict: 'user_id,entry_date' })
+        .upsert({ ...input, user_id: userId }, { onConflict: 'user_id,entry_date' })
       if (error) throw error
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['body_weights'] }),
@@ -439,11 +449,11 @@ export function useTargetWeight() {
   return useQuery({
     queryKey: ['target_weight'],
     queryFn: async (): Promise<number | null> => {
-      const { data: userData } = await supabase.auth.getUser()
+      const userId = await requireUserId()
       const { data, error } = await supabase
         .from('profiles')
         .select('target_weight_kg')
-        .eq('id', userData.user!.id)
+        .eq('id', userId)
         .single()
       if (error) throw error
       return (data as { target_weight_kg: number | null }).target_weight_kg
@@ -456,11 +466,11 @@ export function useUpdateTargetWeight() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (target_weight_kg: number | null) => {
-      const { data: userData } = await supabase.auth.getUser()
+      const userId = await requireUserId()
       const { error } = await supabase
         .from('profiles')
         .update({ target_weight_kg })
-        .eq('id', userData.user!.id)
+        .eq('id', userId)
       if (error) throw error
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['target_weight'] }),
