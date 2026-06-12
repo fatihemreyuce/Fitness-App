@@ -12,6 +12,9 @@ export const colors = {
   carb: '#5b86d6',
   fat: '#e0a05d',
   danger: '#ff6b6b',
+  accentSoft: '#c8ff0015',
+  accentBorder: '#c8ff0033',
+  dangerSoft: '#ff6b6b10',
 } as const
 
 export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24 } as const
