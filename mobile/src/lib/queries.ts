@@ -496,3 +496,20 @@ export function useUpdateTargetWeight() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['target_weight'] }),
   })
 }
+
+// ============ Hesap Silme ============
+// delete_account() RPC oturumdaki auth.users satırını siler → cascade tüm veri.
+// Başarıda local oturumu kapat + cache'i boşalt (sonraki kullanıcıya sızmasın).
+export function useDeleteAccount() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc('delete_account')
+      if (error) throw error
+    },
+    onSuccess: async () => {
+      await supabase.auth.signOut()
+      qc.clear()
+    },
+  })
+}
