@@ -38,7 +38,11 @@ export function weekStartISO(today: string, days = 7): string {
 }
 
 export function workoutVolume(sets: SetRow[]): number {
-  return (sets ?? []).reduce((s, r) => s + r.reps * r.weight_kg, 0)
+  return (sets ?? []).reduce((s, r) => {
+    // Bozuk/eksik veriyi (NaN, negatif, 0) hacme katma.
+    if (!Number.isFinite(r.reps) || !Number.isFinite(r.weight_kg) || r.reps <= 0 || r.weight_kg <= 0) return s
+    return s + r.reps * r.weight_kg
+  }, 0)
 }
 
 export function summary(workouts: WorkoutRow[]): { total: number; thisWeek: number; totalVolumeKg: number } {
@@ -184,7 +188,8 @@ export function weightSummary(
     const diff = Math.abs(parseISODate(sorted[i].entry_date).getTime() - target)
     if (diff < bestDiff) { bestDiff = diff; best = sorted[i] }
   }
-  return { current, change7d: Number((current - best.weight_kg).toFixed(1)) }
+  const change = current - best.weight_kg
+  return { current, change7d: Number.isFinite(change) ? Number(change.toFixed(1)) : null }
 }
 
 // Grafik için: en yeni kaydın tarihinden geriye `days` günlük penceredeki

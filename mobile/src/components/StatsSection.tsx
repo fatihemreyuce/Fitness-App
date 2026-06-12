@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { Text, Card } from './ui'
@@ -22,6 +23,19 @@ export function StatsSection() {
   const { data: week, isLoading: nLoading } = useNutritionWeek(today)
   const { data: goals } = useGoals()
 
+  // Türetilen ağır hesaplamaları memoize et — her render'da yeniden çalışmasın.
+  // (useMemo erken return'den ÖNCE çağrılmalı — hooks kuralı.)
+  const derived = useMemo(() => {
+    const ws = workouts ?? []
+    const s = summary(ws)
+    const freq = weeklyFrequency(ws)
+    const vol = volumeTrend(ws)
+    const cals = dailyCalories(week ?? [], today)
+    const heat = heatmap(ws)
+    const heatMax = Math.max(1, ...heat.flatMap((w) => w.days))
+    return { ws, s, freq, vol, cals, heat, heatMax }
+  }, [workouts, week, today])
+
   const header = (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.sm, marginBottom: spacing.md }}>
       <Ionicons name="stats-chart" size={20} color={colors.accent} />
@@ -38,13 +52,7 @@ export function StatsSection() {
     )
   }
 
-  const ws = workouts ?? []
-  const s = summary(ws)
-  const freq = weeklyFrequency(ws)
-  const vol = volumeTrend(ws)
-  const cals = dailyCalories(week ?? [], today)
-  const heat = heatmap(ws)
-  const heatMax = Math.max(1, ...heat.flatMap((w) => w.days))
+  const { ws, s, freq, vol, cals, heat, heatMax } = derived
   const calGoal = goals?.daily_calorie_goal && goals.daily_calorie_goal > 0 ? goals.daily_calorie_goal : 2400
   const hasWorkouts = ws.length > 0
   const hasCals = cals.some((c) => c.calories > 0)

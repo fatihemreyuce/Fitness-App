@@ -271,7 +271,9 @@ export function useDisplayName() {
 
 export function entryMacros(e: FoodEntry & { food: Food | null }) {
   if (!e.food) return { calories: 0, protein: 0, carb: 0, fat: 0 }
-  const r = e.quantity_g / 100
+  // Bozuk/negatif miktarı 0'a indir (NaN makroların UI'a yayılmasını önler).
+  const grams = Number.isFinite(e.quantity_g) && e.quantity_g > 0 ? e.quantity_g : 0
+  const r = grams / 100
   return {
     calories: e.food.calories_per_100g * r,
     protein: e.food.protein_g * r,

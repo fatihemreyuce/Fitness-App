@@ -64,13 +64,13 @@
 
 ## 🟡 Düşük / Cila
 
-- **`workoutVolume()` NaN/negatif koruması yok** — `stats.ts:41,49,73` → `reps>0 && weight_kg>0 && isFinite()` kontrolü ekle.
-- **`weightSummary()` NaN guard yok** — `stats.ts:187` → UI'a yayılıyor (`WeightSection:92`); çıkarmadan önce `isFinite()`.
-- **Kalori hesabı `quantity_g` doğrulaması yok** — `queries.ts:282-284`.
-- **Timezone/DST ele alınmamış** — `queries.ts:175,195` → UTC kullan.
-- **`StatsSection` memoize değil** — `heatmap()`/`volumeTrend()` her render'da çalışıyor; `useMemo` ekle.
-- **Accessibility label yok** — `src/components/ui/*` → ekran okuyucu için `accessibilityLabel` ekle.
-- **Signup şifre ipucu** — "en az 6 karakter" yazıyor, Supabase varsayılanı 8; mesajı düzelt.
+- ✅ **`workoutVolume()` NaN/negatif koruması** — `stats.ts` → `isFinite() && >0` guard eklendi (2026-06-12).
+- ✅ **`weightSummary()` NaN guard** — `stats.ts` → `change7d` artık `isFinite` değilse `null` (UI'a NaN yayılmıyor) (2026-06-12).
+- ✅ **`entryMacros()` `quantity_g` doğrulama** — `queries.ts` → bozuk/negatif miktar 0'a indiriliyor (2026-06-12).
+- ✅ **`StatsSection` memoize** — `summary/weeklyFrequency/volumeTrend/dailyCalories/heatmap` tek `useMemo`'ya alındı (2026-06-12).
+- ⏸️ **Timezone/DST** — `weekStartISO`/`parseISODate` lokal saat kullanıyor; tek cihaz/tek timezone kullanımda sorun yok. Ertelendi.
+- ⏸️ **Accessibility label** — `src/components/ui/*` → ekran okuyucu için `accessibilityLabel`. Daha geniş iş, ertelendi.
+- ❎ **Signup şifre ipucu** — "en az 6 karakter" **doğru** (Supabase varsayılan min. uzunluk 6'dır; rapor 8 demiş, yanlış). Değişiklik yok.
 
 ---
 
