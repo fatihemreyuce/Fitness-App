@@ -1,58 +1,53 @@
-import { useEffect, useState } from 'react'
-import { Alert, View } from 'react-native'
+import { Pressable, View } from 'react-native'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/auth'
-import { Screen, Text, Card, Input, Button } from '../../components/ui'
-import { spacing } from '../../theme'
-import { useGoals, useUpdateGoals, useDisplayName } from '../../lib/queries'
+import { Screen, Text, Hairline } from '../../components/ui'
+import { colors, spacing, radius } from '../../theme'
+import { useDisplayName } from '../../lib/queries'
+import { ProgressHero } from '../../components/profile/ProgressHero'
+import { KpiStrip } from '../../components/profile/KpiStrip'
+import { WeightTrend } from '../../components/profile/WeightTrend'
+import { GoalsInline } from '../../components/profile/GoalsInline'
 import { StatsSection } from '../../components/StatsSection'
-import { WeightSection } from '../../components/WeightSection'
 import { DeleteAccountSection } from '../../components/DeleteAccountSection'
 
 export default function Profile() {
   const { session } = useAuth()
   const { data: displayName } = useDisplayName()
-  const { data: goals } = useGoals()
-  const updateGoals = useUpdateGoals()
-  const [cal, setCal] = useState('')
-  const [prot, setProt] = useState('')
-
-  useEffect(() => {
-    if (goals) { setCal(goals.daily_calorie_goal?.toString() ?? ''); setProt(goals.daily_protein_goal?.toString() ?? '') }
-  }, [goals])
-
-  function saveGoals() {
-    updateGoals.mutate(
-      { daily_calorie_goal: cal ? Number(cal) : null, daily_protein_goal: prot ? Number(prot) : null },
-      { onSuccess: () => Alert.alert('Kaydedildi', 'Hedeflerin güncellendi'), onError: (e) => Alert.alert('Hata', String(e)) }
-    )
-  }
+  const initial = (displayName ?? session?.user.email ?? '?').trim().charAt(0).toUpperCase()
 
   return (
     <Screen scroll>
-      <Text variant="title" style={{ marginBottom: spacing.lg }}>Profil</Text>
-
-      <Card style={{ marginBottom: spacing.lg }}>
-        <Text variant="label">AD</Text>
-        <Text variant="subtitle" style={{ marginBottom: spacing.md }}>{displayName ?? '...'}</Text>
-        <Text variant="label">E-POSTA</Text>
-        <Text variant="subtitle">{session?.user.email}</Text>
-      </Card>
-
-      <Card style={{ marginBottom: spacing.lg }}>
-        <Text variant="subtitle" style={{ marginBottom: spacing.md }}>Günlük Hedefler</Text>
-        <View style={{ gap: spacing.md }}>
-          <Input placeholder="Kalori hedefi (kcal)" keyboardType="numeric" value={cal} onChangeText={setCal} />
-          <Input placeholder="Protein hedefi (g)" keyboardType="numeric" value={prot} onChangeText={setProt} />
-          <Button title={updateGoals.isPending ? 'Kaydediliyor...' : 'Hedefleri Kaydet'} onPress={saveGoals} disabled={updateGoals.isPending} />
+      {/* Kimlik şeridi */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+        <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.cardAlt, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ fontSize: 15, fontWeight: '800', color: colors.accent }}>{initial}</Text>
         </View>
-      </Card>
+        <View style={{ flex: 1 }}>
+          <Text variant="subtitle">{displayName ?? '...'}</Text>
+          <Text variant="label">{session?.user.email}</Text>
+        </View>
+      </View>
 
-      <WeightSection />
-
+      <Hairline />
+      <ProgressHero />
+      <Hairline />
+      <KpiStrip />
+      <Hairline />
+      <WeightTrend />
+      <Hairline />
+      <GoalsInline />
+      <Hairline />
       <StatsSection />
+      <Hairline />
 
-      <Button title="Çıkış Yap" variant="ghost" onPress={() => supabase.auth.signOut()} />
+      {/* Hesap */}
+      <Text variant="eyebrow" style={{ marginBottom: spacing.sm }}>Hesap</Text>
+      <View style={{ backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, paddingHorizontal: spacing.md }}>
+        <Pressable onPress={() => supabase.auth.signOut()} accessibilityRole="button" style={({ pressed }) => [{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.md }, pressed && { opacity: 0.7 }]}>
+          <Text variant="body" color={colors.textMuted}>↩  Çıkış yap</Text>
+        </Pressable>
+      </View>
 
       <DeleteAccountSection />
     </Screen>
