@@ -7,6 +7,7 @@ import { spacing } from '../../theme'
 import { useGoals, useUpdateGoals, useDisplayName } from '../../lib/queries'
 import { StatsSection } from '../../components/StatsSection'
 import { WeightSection } from '../../components/WeightSection'
+import { DeleteAccountSection } from '../../components/DeleteAccountSection'
 
 export default function Profile() {
   const { session } = useAuth()
@@ -52,6 +53,8 @@ export default function Profile() {
       <StatsSection />
 
       <Button title="Çıkış Yap" variant="ghost" onPress={() => supabase.auth.signOut()} />
+
+      <DeleteAccountSection />
     </Screen>
   )
 }
