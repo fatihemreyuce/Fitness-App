@@ -29,34 +29,36 @@
 
 ## 🟠 Yüksek / Orta
 
-### 4. `parseISODate()` geçersiz tarihi sessizce kabul (Veri)
+### 4. `parseISODate()` geçersiz tarihi sessizce kabul (Veri) — ⏸️ ERTELENDİ (düşük risk)
 - **Dosya:** `mobile/src/lib/stats.ts:18-20`
 - **Sorun:** `'2024-13-45'` hata vermeden sonraki aya kayıyor.
-- **Düzeltme:** Date kurmadan önce ay 1-12, gün 1-31 doğrula.
+- **2026-06-12 değerlendirme:** Bu fonksiyona giden tüm tarihler makine üretimi (`todayISO()`, `weekStartISO()`, DB `entry_date` kolonu — hep geçerli YYYY-MM-DD). Geçersiz girdi hiçbir çağırandan ulaşamıyor. Savunma amaçlı; öncelik düşük. Değişiklik yapılmadı.
 
-### 5. Güvensiz tip cast'leri (Veri)
-- **Dosya:** `mobile/src/lib/queries.ts:71,97,189,265,282,307,361`
-- **Sorun:** `as unknown as Type` — Supabase yanıtı runtime'da doğrulanmıyor; nested ilişkiler null/bozuk olabilir.
-- **Düzeltme:** Zod/io-ts şema doğrulaması ekle.
+### 5. Güvensiz tip cast'leri (Veri) — ❎ YAPILMAYACAK (bu bağlamda over-engineering)
+- **Dosya:** `mobile/src/lib/queries.ts` (nested select cast'leri)
+- **Sorun:** `as unknown as Type` — Supabase yanıtı runtime'da doğrulanmıyor.
+- **2026-06-12 değerlendirme:** `as unknown as` Supabase nested ilişkilerde standart pratik (üretilen tipler nested select'i tam modellemiyor). Gerçek null riski olan yerlerde zaten guard var (`entryMacros` `!e.food`, `useNutritionWeek` `r.food ?`). Kişisel app + kontrollü şema için her yere Zod eklemek ağır. Yapılmadı.
 
-### 6. Nutrition tarih state donuyor (Frontend)
-- **Dosya:** `mobile/src/app/(app)/nutrition.tsx:23`
-- **Sorun:** `useState(todayISO())` mount'ta bir kez set ediliyor, navigasyon/gün değişiminde güncellenmiyor.
-- **Düzeltme:** `useFocusEffect` veya `useLocalSearchParams` ile focus'ta yenile.
+### 6. Nutrition tarih state donuyor (Frontend) — ✅ DÜZELTİLDİ (2026-06-12)
+- **Dosya:** `mobile/src/app/(app)/nutrition.tsx`
+- **Sorun:** `useState(todayISO())` mount'ta bir kez set ediliyor; gece yarısını geçince "Bugün" eski günde donuyor.
+- **Yapılan:** `useFocusEffect(useCallback(() => setDate(todayISO()), []))` — ekran her odaklandığında tarih tazeleniyor.
 
-### 7. Profile ekranı race condition (Frontend)
-- **Dosya:** `mobile/src/app/(app)/profile.tsx:19-23`
-- **Sorun:** `display_name` React Query dışında doğrudan `supabase.from()` ile çekiliyor → cache bypass + mutation ile race.
-- **Düzeltme:** `queries.ts`'e `useDisplayName` hook'u ekle.
+### 7. Profile ekranı race condition (Frontend) — ✅ DÜZELTİLDİ (2026-06-12)
+- **Dosya:** `mobile/src/app/(app)/profile.tsx`, `mobile/src/lib/queries.ts`
+- **Sorun:** `display_name` React Query dışında doğrudan `supabase.from()` ile çekiliyor → cache bypass.
+- **Not:** "Mutation race" abartılıydı (display_name hiç mutate edilmiyor) ama bypass tutarsızdı.
+- **Yapılan:** `useDisplayName()` hook'u eklendi; component artık doğrudan supabase çağırmıyor, `useEffect`+local state kaldırıldı.
 
-### 8. Profiles DELETE politikası yok (Güvenlik)
+### 8. Profiles DELETE politikası yok (Güvenlik) — ⏸️ ERTELENDİ
 - **Dosya:** `supabase/migrations/...create_initial_schema.sql`, `cloud-setup.sql`
-- **Sorun:** SELECT/INSERT/UPDATE var, DELETE yok → kullanıcı kendi profilini silemiyor (KVKK).
-- **Düzeltme:** `create policy "profiles_delete_own" on public.profiles for delete using (auth.uid() = id);` ekle ya da tasarım gereği olduğunu belgele.
+- **Sorun:** SELECT/INSERT/UPDATE var, DELETE yok.
+- **2026-06-12 değerlendirme:** Uygulamada **hesap silme özelliği yok** → politikayı kullanacak akış yok. Migration açmak erken. Hesap silme özelliği eklenince birlikte yapılacak.
 
-### 9. E-posta doğrulaması yok (Güvenlik)
-- **Dosya:** `mobile/src/app/(auth)/signup.tsx:14-19`
-- **Düzeltme:** Supabase auth ayarlarında e-posta onayını zorunlu kıl.
+### 9. E-posta doğrulaması yok (Güvenlik) — ✅ KISMEN DÜZELTİLDİ (kod tarafı)
+- **Dosya:** `mobile/src/app/(auth)/signup.tsx`
+- **Sorun:** Onay açık olsa bile mesaj "Giriş yapabilirsin" diyordu (yanlış).
+- **Yapılan:** `signUp` `data.session` null dönerse (onay gerekiyor) "E-postanı doğrula" mesajı gösteriliyor; aksi halde başarı. Onayın zorunlu kılınması Supabase dashboard ayarı (kod dışı) — kullanıcı kontrol etmeli.
 
 ---
 

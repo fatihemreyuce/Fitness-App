@@ -251,6 +251,24 @@ export function useUpdateGoals() {
   })
 }
 
+// Profildeki görünen ad — React Query cache'i üzerinden (component'te doğrudan
+// supabase.from() çağırmak yerine; tutarlı invalidation + cache paylaşımı).
+export function useDisplayName() {
+  return useQuery({
+    queryKey: ['display_name'],
+    queryFn: async (): Promise<string | null> => {
+      const userId = await requireUserId()
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('display_name')
+        .eq('id', userId)
+        .single()
+      if (error) throw error
+      return (data as { display_name: string | null }).display_name
+    },
+  })
+}
+
 export function entryMacros(e: FoodEntry & { food: Food | null }) {
   if (!e.food) return { calories: 0, protein: 0, carb: 0, fat: 0 }
   const r = e.quantity_g / 100

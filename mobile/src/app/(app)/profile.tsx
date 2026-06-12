@@ -4,23 +4,17 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/auth'
 import { Screen, Text, Card, Input, Button } from '../../components/ui'
 import { spacing } from '../../theme'
-import { useGoals, useUpdateGoals } from '../../lib/queries'
+import { useGoals, useUpdateGoals, useDisplayName } from '../../lib/queries'
 import { StatsSection } from '../../components/StatsSection'
 import { WeightSection } from '../../components/WeightSection'
 
 export default function Profile() {
   const { session } = useAuth()
-  const [displayName, setDisplayName] = useState<string | null>(null)
+  const { data: displayName } = useDisplayName()
   const { data: goals } = useGoals()
   const updateGoals = useUpdateGoals()
   const [cal, setCal] = useState('')
   const [prot, setProt] = useState('')
-
-  useEffect(() => {
-    if (!session) return
-    supabase.from('profiles').select('display_name').eq('id', session.user.id).single()
-      .then(({ data }) => setDisplayName(data?.display_name ?? null))
-  }, [session])
 
   useEffect(() => {
     if (goals) { setCal(goals.daily_calorie_goal?.toString() ?? ''); setProt(goals.daily_protein_goal?.toString() ?? '') }

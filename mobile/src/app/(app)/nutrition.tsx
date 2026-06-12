@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { Pressable, View } from 'react-native'
-import { useRouter } from 'expo-router'
+import { useFocusEffect, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { Screen, Text, Card, ProgressBar, StatChip } from '../../components/ui'
 import { colors, spacing } from '../../theme'
@@ -20,7 +20,10 @@ function todayISO() {
 }
 
 export default function Nutrition() {
-  const [date] = useState(todayISO())
+  const [date, setDate] = useState(todayISO())
+  // Ekran her odaklandığında bugünün tarihini tazele (gece yarısını geçince
+  // "Bugün" eski günde donmasın).
+  useFocusEffect(useCallback(() => setDate(todayISO()), []))
   const { data: entries, isLoading } = useDayEntries(date)
   const { data: goals } = useGoals()
   const router = useRouter()

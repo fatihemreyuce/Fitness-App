@@ -13,10 +13,12 @@ export default function Signup() {
 
   async function signUp() {
     setLoading(true)
-    const { error } = await supabase.auth.signUp({ email, password })
+    const { data, error } = await supabase.auth.signUp({ email, password })
     setLoading(false)
     if (error) Alert.alert('Kayıt hatası', error.message)
-    else Alert.alert('Başarılı', 'Hesap oluşturuldu. Giriş yapabilirsin.')
+    // E-posta onayı açıksa signUp session DÖNDÜRMEZ → kullanıcı önce doğrulamalı.
+    else if (!data.session) Alert.alert('E-postanı doğrula', 'Hesabın oluşturuldu. Giriş yapmadan önce e-postana gönderilen doğrulama bağlantısına tıkla.')
+    else Alert.alert('Başarılı', 'Hesap oluşturuldu.')
   }
 
   return (
