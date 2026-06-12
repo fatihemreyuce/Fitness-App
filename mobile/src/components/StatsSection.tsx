@@ -1,23 +1,20 @@
-import { useMemo } from 'react'
-import { View } from 'react-native'
+import { useState, useMemo } from 'react'
+import { LayoutAnimation, Platform, Pressable, UIManager, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { Text, Card } from './ui'
+import { Text, Card, EmptyState } from './ui'
 import { colors, spacing } from '../theme'
 import { BarChart } from './charts/BarChart'
 import { Heatmap } from './charts/Heatmap'
 import { useWorkoutStats, useNutritionWeek, useGoals } from '../lib/queries'
-import { summary, weeklyFrequency, volumeTrend, dailyCalories, heatmap, todayISO } from '../lib/stats'
+import { weeklyFrequency, volumeTrend, dailyCalories, heatmap, todayISO } from '../lib/stats'
 
-function SummaryCard({ big, label }: { big: string; label: string }) {
-  return (
-    <Card style={{ flex: 1, alignItems: 'center', paddingVertical: spacing.md, paddingHorizontal: spacing.sm }}>
-      <Text variant="stat" color={colors.accent} style={{ fontSize: 22 }}>{big}</Text>
-      <Text variant="label" style={{ textAlign: 'center', marginTop: 2 }}>{label}</Text>
-    </Card>
-  )
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true)
 }
 
 export function StatsSection() {
+  const [open, setOpen] = useState(false)
+
   const today = todayISO()
   const { data: workouts, isLoading: wLoading } = useWorkoutStats()
   const { data: week, isLoading: nLoading } = useNutritionWeek(today)
@@ -27,20 +24,31 @@ export function StatsSection() {
   // (useMemo erken return'den ÖNCE çağrılmalı — hooks kuralı.)
   const derived = useMemo(() => {
     const ws = workouts ?? []
-    const s = summary(ws)
     const freq = weeklyFrequency(ws)
     const vol = volumeTrend(ws)
     const cals = dailyCalories(week ?? [], today)
     const heat = heatmap(ws)
     const heatMax = Math.max(1, ...heat.flatMap((w) => w.days))
-    return { ws, s, freq, vol, cals, heat, heatMax }
+    return { ws, freq, vol, cals, heat, heatMax }
   }, [workouts, week, today])
 
+  function toggleOpen() {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+    setOpen((o) => !o)
+  }
+
   const header = (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.sm, marginBottom: spacing.md }}>
-      <Ionicons name="stats-chart" size={20} color={colors.accent} />
-      <Text variant="title">İstatistikler</Text>
-    </View>
+    <Pressable
+      onPress={toggleOpen}
+      accessibilityRole="button"
+      style={({ pressed }) => [
+        { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.sm, marginBottom: spacing.md },
+        pressed && { opacity: 0.7 },
+      ]}
+    >
+      <Text variant="eyebrow">Aktivite</Text>
+      <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={16} color={colors.textFaint} />
+    </Pressable>
   )
 
   if (wLoading || nLoading) {
@@ -52,7 +60,7 @@ export function StatsSection() {
     )
   }
 
-  const { ws, s, freq, vol, cals, heat, heatMax } = derived
+  const { ws, freq, vol, cals, heat, heatMax } = derived
   const calGoal = goals?.daily_calorie_goal && goals.daily_calorie_goal > 0 ? goals.daily_calorie_goal : 2400
   const hasWorkouts = ws.length > 0
   const hasCals = cals.some((c) => c.calories > 0)
@@ -61,49 +69,45 @@ export function StatsSection() {
     <View style={{ marginBottom: spacing.lg }}>
       {header}
 
-      <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md }}>
-        <SummaryCard big={String(s.total)} label="Toplam antrenman" />
-        <SummaryCard big={String(s.thisWeek)} label="Bu hafta" />
-        <SummaryCard big={`${(s.totalVolumeKg / 1000).toFixed(1)} t`} label="Toplam hacim" />
-      </View>
+      {open ? (
+        <View>
+          {hasWorkouts ? (
+            <>
+              <Card style={{ marginBottom: spacing.md }}>
+                <Text variant="label" style={{ marginBottom: spacing.md }}>Haftalık antrenman sıklığı</Text>
+                <BarChart data={freq.map((f) => ({ label: f.label, value: f.count }))} showValues />
+              </Card>
+              <Card style={{ marginBottom: spacing.md }}>
+                <Text variant="label" style={{ marginBottom: spacing.md }}>Kaldırılan hacim trendi (ton, son {vol.length} antrenman)</Text>
+                <BarChart data={vol.map((v, i) => ({ label: i === 0 ? 'eski' : i === vol.length - 1 ? 'yeni' : '', value: Number((v.valueKg / 1000).toFixed(2)) }))} />
+              </Card>
+            </>
+          ) : (
+            <EmptyState icon="barbell-outline" label="Henüz antrenman yok" hint="Bir antrenman ekleyince burada görünecek" />
+          )}
 
-      {hasWorkouts ? (
-        <>
           <Card style={{ marginBottom: spacing.md }}>
-            <Text variant="label" style={{ marginBottom: spacing.md }}>Haftalık antrenman sıklığı</Text>
-            <BarChart data={freq.map((f) => ({ label: f.label, value: f.count }))} showValues />
+            <Text variant="label" style={{ marginBottom: spacing.md }}>Son 7 gün kalori</Text>
+            {hasCals ? (
+              <BarChart
+                data={cals.map((c) => ({ label: c.label, value: Math.round(c.calories) }))}
+                color={colors.carb}
+                goal={calGoal}
+                overColor={colors.fat}
+                goalColor={colors.fat}
+              />
+            ) : (
+              <Text variant="label">Son 7 günde besin kaydı yok.</Text>
+            )}
           </Card>
-          <Card style={{ marginBottom: spacing.md }}>
-            <Text variant="label" style={{ marginBottom: spacing.md }}>Kaldırılan hacim trendi (ton, son {vol.length} antrenman)</Text>
-            <BarChart data={vol.map((v, i) => ({ label: i === 0 ? 'eski' : i === vol.length - 1 ? 'yeni' : '', value: Number((v.valueKg / 1000).toFixed(2)) }))} />
-          </Card>
-        </>
-      ) : (
-        <Card style={{ borderStyle: 'dashed', marginBottom: spacing.md }}>
-          <Text variant="label">Henüz antrenman yok — bir antrenman ekleyince istatistikler burada görünecek.</Text>
-        </Card>
-      )}
 
-      <Card style={{ marginBottom: spacing.md }}>
-        <Text variant="label" style={{ marginBottom: spacing.md }}>Son 7 gün kalori</Text>
-        {hasCals ? (
-          <BarChart
-            data={cals.map((c) => ({ label: c.label, value: Math.round(c.calories) }))}
-            color={colors.carb}
-            goal={calGoal}
-            overColor={colors.fat}
-            goalColor={colors.fat}
-          />
-        ) : (
-          <Text variant="label">Son 7 günde besin kaydı yok.</Text>
-        )}
-      </Card>
-
-      {hasWorkouts ? (
-        <Card style={{ marginBottom: spacing.md }}>
-          <Text variant="label" style={{ marginBottom: spacing.md }}>Antrenman serisi (son 6 hafta)</Text>
-          <Heatmap weeks={heat} max={heatMax} />
-        </Card>
+          {hasWorkouts ? (
+            <Card style={{ marginBottom: spacing.md }}>
+              <Text variant="label" style={{ marginBottom: spacing.md }}>Antrenman serisi (son 6 hafta)</Text>
+              <Heatmap weeks={heat} max={heatMax} />
+            </Card>
+          ) : null}
+        </View>
       ) : null}
     </View>
   )
