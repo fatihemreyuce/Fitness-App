@@ -68,7 +68,7 @@
 - ✅ **`weightSummary()` NaN guard** — `stats.ts` → `change7d` artık `isFinite` değilse `null` (UI'a NaN yayılmıyor) (2026-06-12).
 - ✅ **`entryMacros()` `quantity_g` doğrulama** — `queries.ts` → bozuk/negatif miktar 0'a indiriliyor (2026-06-12).
 - ✅ **`StatsSection` memoize** — `summary/weeklyFrequency/volumeTrend/dailyCalories/heatmap` tek `useMemo`'ya alındı (2026-06-12).
-- ⏸️ **Timezone/DST** — `weekStartISO`/`parseISODate` lokal saat kullanıyor; tek cihaz/tek timezone kullanımda sorun yok. Ertelendi.
+- ❎/✅ **Timezone/DST** — Rapor "UTC kullan" demiş ama bu YANLIŞ olurdu: girişler kullanıcının **yerel takvim günü**ne göre anahtarlanmalı (UTC'ye geçince gece yarısına yakın kayıtlar yanlış güne kayardı). Mevcut lokal yaklaşım doğru. Asıl sorun iki ayrı `todayISO` tanımıydı → `nutrition.tsx`'teki kopya kaldırıldı, tek kaynak `stats.ts#todayISO` (2026-06-12).
 - ⏸️ **Accessibility label** — `src/components/ui/*` → ekran okuyucu için `accessibilityLabel`. Daha geniş iş, ertelendi.
 - ❎ **Signup şifre ipucu** — "en az 6 karakter" **doğru** (Supabase varsayılan min. uzunluk 6'dır; rapor 8 demiş, yanlış). Değişiklik yok.
 

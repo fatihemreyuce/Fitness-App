@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { Screen, Text, Card, ProgressBar, StatChip } from '../../components/ui'
 import { colors, spacing } from '../../theme'
 import { useDayEntries, useGoals, entryMacros, type MealType } from '../../lib/queries'
+import { todayISO } from '../../lib/stats'
 
 const MEALS: { type: MealType; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
   { type: 'breakfast', label: 'Kahvaltı', icon: 'cafe' },
@@ -12,12 +13,6 @@ const MEALS: { type: MealType; label: string; icon: keyof typeof Ionicons.glyphM
   { type: 'dinner', label: 'Akşam', icon: 'moon' },
   { type: 'snack', label: 'Ara', icon: 'fast-food' },
 ]
-
-function todayISO() {
-  const d = new Date()
-  const off = d.getTimezoneOffset()
-  return new Date(d.getTime() - off * 60000).toISOString().slice(0, 10)
-}
 
 export default function Nutrition() {
   const [date, setDate] = useState(todayISO())
