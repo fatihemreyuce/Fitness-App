@@ -7,6 +7,9 @@ export type ScanResult = {
   protein: number
   karbonhidrat: number
   yag: number
+  guven: number // 0-1 AI güven skoru (etiket okumada yüksek, tahminde değişken)
+  olcu_birimi: string // doğal ev ölçüsü: "kase", "dilim", "tabak", "adet", "avuç"...
+  birim_gram: number // 1 ölçü biriminin tahmini gramı
 }
 
 // foods tablosunun 100g-başına şeması.

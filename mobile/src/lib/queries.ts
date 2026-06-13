@@ -522,6 +522,9 @@ export type AnalyzeFoodResult = {
   protein: number
   karbonhidrat: number
   yag: number
+  guven: number
+  olcu_birimi: string
+  birim_gram: number
 }
 
 // Edge Function'ı çağırır; base64 görseli analiz ettirir.

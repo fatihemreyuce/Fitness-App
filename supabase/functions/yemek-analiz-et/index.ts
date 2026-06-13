@@ -8,16 +8,21 @@ const cors = {
 }
 
 const PROMPT =
-  "Görseli analiz et. İki durum olabilir:\n" +
-  "1) Eğer görselde bir BESİN DEĞERLERİ TABLOSU / ürün etiketi varsa (paketli ürünün arkası), " +
-  "değerleri tablodan BİREBİR oku, TAHMİN ETME. Tabloda değerler 100 gram başına verilmişse " +
-  "porsiyon_gram=100 yap ve kalori/protein/karbonhidrat/yag alanlarını 100 gram için yaz. " +
-  "Etikette bir porsiyon (serving/porsiyon) belirtilmişse porsiyon_gram'ı o porsiyona eşitle ve " +
-  "değerleri o porsiyona göre ver. yemek_adi = paketteki ürün adı.\n" +
-  "2) Eğer tablo yoksa, görseldeki yemeği tanı; tahmini porsiyonu gram cinsinden ver ve o porsiyonun " +
-  "TOPLAM kalori ve makrolarını TAHMİN et.\n" +
-  "SADECE şu alanlara sahip bir JSON döndür: yemek_adi (string), porsiyon_gram (number), " +
-  "kalori (number), protein (number), karbonhidrat (number), yag (number). " +
+  "Görseli analiz et ve ADIM ADIM düşün:\n" +
+  "1) Görseldeki yemeği veya ürünü tanı.\n" +
+  "2) Eğer görselde bir BESİN DEĞERLERİ TABLOSU / ürün etiketi varsa (paketli ürünün arkası), " +
+  "değerleri tablodan BİREBİR oku, TAHMİN ETME. Tablo 100 gram başına ise porsiyon_gram=100 yap; " +
+  "etikette bir porsiyon (serving) belirtilmişse porsiyon_gram'ı ona eşitle. guven=0.95. " +
+  "yemek_adi = paketteki ürün adı.\n" +
+  "3) Tablo yoksa TAHMİN et: önce tabağın/kasenin tahmini çapını ve yemeğin kabarıklığını değerlendir, " +
+  "hacmi tahmin et, yemeğin yoğunluğundan gramı çıkar. Buna göre porsiyon_gram (görseldeki tahmini miktar) " +
+  "ve o porsiyonun TOPLAM kalori/makrolarını hesapla. Tahmininin ne kadar emin olduğunu guven (0-1) ile " +
+  "belirt: net görüntü ve tanıdık yemek → yüksek; bulanık, belirsiz porsiyon veya alışılmadık yemek → düşük.\n" +
+  "4) Bu yemek için DOĞAL bir ev ölçüsü seç: olcu_birimi (\"kase\", \"tabak\", \"dilim\", \"adet\", \"avuç\", " +
+  "\"bardak\", \"yemek kaşığı\", \"porsiyon\" gibi) ve BİR biriminin kaç gram olduğunu birim_gram olarak ver.\n" +
+  "SADECE şu JSON'u döndür: {\"yemek_adi\": string, \"porsiyon_gram\": number, \"kalori\": number, " +
+  "\"protein\": number, \"karbonhidrat\": number, \"yag\": number, \"guven\": number, " +
+  "\"olcu_birimi\": string, \"birim_gram\": number}. " +
   "Ne yemek ne de besin tablosu tanınıyorsa yemek_adi alanını null yap."
 
 Deno.serve(async (req) => {
@@ -63,13 +68,17 @@ Deno.serve(async (req) => {
     }
     if (parsed?.yemek_adi == null) return json({ yemek_adi: null }, 200)
 
+    const porsiyon = num(parsed.porsiyon_gram, 100)
     return json({
       yemek_adi: String(parsed.yemek_adi),
-      porsiyon_gram: num(parsed.porsiyon_gram, 100),
+      porsiyon_gram: porsiyon,
       kalori: num(parsed.kalori, 0),
       protein: num(parsed.protein, 0),
       karbonhidrat: num(parsed.karbonhidrat, 0),
       yag: num(parsed.yag, 0),
+      guven: clamp01(parsed.guven),
+      olcu_birimi: str(parsed.olcu_birimi, "porsiyon"),
+      birim_gram: num(parsed.birim_gram, porsiyon > 0 ? porsiyon : 100),
     }, 200)
   } catch (e) {
     console.error("Unexpected", e)
@@ -85,6 +94,14 @@ function json(body: unknown, status: number) {
 function num(v: unknown, d: number) {
   const n = Number(v)
   return Number.isFinite(n) && n >= 0 ? n : d
+}
+function clamp01(v: unknown) {
+  const n = Number(v)
+  if (!Number.isFinite(n)) return 0.5
+  return Math.min(1, Math.max(0, n))
+}
+function str(v: unknown, d: string) {
+  return typeof v === "string" && v.trim() ? v.trim() : d
 }
 function stripFence(s: string) {
   return s.replace(/^```(?:json)?/i, "").replace(/```$/, "").trim()

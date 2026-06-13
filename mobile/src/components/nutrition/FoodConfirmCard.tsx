@@ -14,6 +14,10 @@ const MEALS: { type: MealType; label: string }[] = [
   { type: 'snack', label: 'Atış.' },
 ]
 
+// Hibrit porsiyon: kullanıcı gram tahmin etmek yerine "½ / 1 / 1½ / 2 birim" seçer.
+const PRESETS = [0.5, 1, 1.5, 2]
+const multLabel = (m: number) => (m === 0.5 ? '½' : m === 1.5 ? '1½' : String(m))
+
 export type FoodConfirmArgs = {
   name: string
   per100g: ReturnType<typeof portionToPer100g>
@@ -39,6 +43,15 @@ export function FoodConfirmCard({ result, isSaving, onConfirm, onRetry }: Props)
   const c = Math.round(result.karbonhidrat * factor)
   const f = Math.round(result.yag * factor)
 
+  // Güven skoru (etiket okumada yüksek, tahminde değişken)
+  const guvenPct = Math.round((result.guven ?? 0) * 100)
+  const guvenColor =
+    (result.guven ?? 0) >= 0.8 ? colors.accent : (result.guven ?? 0) >= 0.5 ? colors.fat : colors.danger
+
+  // Hibrit porsiyon birimi (AI'dan gelen doğal ölçü)
+  const unit = result.olcu_birimi || 'porsiyon'
+  const unitGram = result.birim_gram > 0 ? result.birim_gram : base
+
   function confirm() {
     const q = Number(portion)
     if (!q || q <= 0 || !meal) return
@@ -56,6 +69,10 @@ export function FoodConfirmCard({ result, isSaving, onConfirm, onRetry }: Props)
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
           <Ionicons name="restaurant" size={18} color={colors.accent} />
           <Text variant="subtitle" style={{ flex: 1 }}>{result.yemek_adi}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.cardAlt, paddingHorizontal: spacing.sm, paddingVertical: 3, borderRadius: 999 }}>
+            <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: guvenColor }} />
+            <Text variant="label" color={guvenColor}>%{guvenPct}</Text>
+          </View>
         </View>
 
         <Hairline />
@@ -80,6 +97,35 @@ export function FoodConfirmCard({ result, isSaving, onConfirm, onRetry }: Props)
             />
             <Text variant="label">g</Text>
           </View>
+        </View>
+
+        <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm }}>
+          {PRESETS.map((m) => {
+            const g = Math.max(1, Math.round(m * unitGram))
+            const on = Math.round(Number(portion) || 0) === g
+            return (
+              <Pressable
+                key={m}
+                onPress={() => setPortion(String(g))}
+                style={{
+                  flex: 1,
+                  paddingVertical: spacing.sm,
+                  borderRadius: 9,
+                  alignItems: 'center',
+                  backgroundColor: on ? colors.accentSoft : colors.cardAlt,
+                  borderWidth: 1,
+                  borderColor: on ? colors.accent : 'transparent',
+                }}
+              >
+                <Text variant="label" color={on ? colors.accent : colors.textMuted}>
+                  {multLabel(m)} {unit}
+                </Text>
+                <Text variant="label" color={colors.textFaint} style={{ fontSize: 9, marginTop: 1 }}>
+                  {g}g
+                </Text>
+              </Pressable>
+            )
+          })}
         </View>
 
         <Text variant="eyebrow" style={{ marginTop: spacing.md, marginBottom: spacing.sm }}>
