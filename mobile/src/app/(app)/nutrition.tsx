@@ -40,7 +40,19 @@ export default function Nutrition() {
   return (
     <Screen scroll>
       <Text variant="label">{new Date(date).toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' })}</Text>
-      <Text variant="title" style={{ marginBottom: spacing.lg }}>Bugün</Text>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.lg }}>
+        <Text variant="title">Bugün</Text>
+        <Pressable onPress={() => router.push(`/(app)/scan-food?date=${date}`)}
+          accessibilityRole="button"
+          style={({ pressed }) => [{
+            flexDirection: 'row', alignItems: 'center', gap: 6,
+            backgroundColor: colors.accentSoft, borderWidth: 1, borderColor: colors.accent,
+            paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: 999,
+          }, pressed && { opacity: 0.7 }]}>
+          <Ionicons name="camera" size={15} color={colors.accent} />
+          <Text variant="label" color={colors.accent}>AI ile Tara</Text>
+        </Pressable>
+      </View>
 
       <Card style={{ marginBottom: spacing.lg }}>
         <View>

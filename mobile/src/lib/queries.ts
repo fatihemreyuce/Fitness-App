@@ -513,3 +513,56 @@ export function useDeleteAccount() {
     },
   })
 }
+
+// === AI Yemek Tarama ===
+export type AnalyzeFoodResult = {
+  yemek_adi: string | null
+  porsiyon_gram: number
+  kalori: number
+  protein: number
+  karbonhidrat: number
+  yag: number
+}
+
+// Edge Function'ı çağırır; base64 görseli analiz ettirir.
+export function useAnalyzeFood() {
+  return useMutation({
+    mutationFn: async (input: { imageBase64: string; mimeType: string }): Promise<AnalyzeFoodResult> => {
+      const { data, error } = await supabase.functions.invoke('yemek-analiz-et', { body: input })
+      if (error) throw error
+      return data as AnalyzeFoodResult
+    },
+  })
+}
+
+// Taranan yemeği mevcut sisteme yazar: foods (100g-başına) + food_entries (porsiyon).
+export function useLogScannedFood() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (input: {
+      name: string
+      per100g: { calories_per_100g: number; protein_g: number; carb_g: number; fat_g: number }
+      quantity_g: number
+      meal_type: MealType
+      entry_date: string
+    }) => {
+      const userId = await requireUserId()
+      const { data: food, error: fErr } = await supabase.from('foods')
+        .insert({ name: input.name, ...input.per100g, owner_id: userId })
+        .select().single()
+      if (fErr) throw fErr
+      const { error: eErr } = await supabase.from('food_entries').insert({
+        user_id: userId,
+        entry_date: input.entry_date,
+        meal_type: input.meal_type,
+        food_id: (food as Food).id,
+        quantity_g: input.quantity_g,
+      })
+      if (eErr) throw eErr
+    },
+    onSuccess: (_d, vars) => {
+      qc.invalidateQueries({ queryKey: ['food_entries', vars.entry_date] })
+      qc.invalidateQueries({ queryKey: ['foods'] })
+    },
+  })
+}
