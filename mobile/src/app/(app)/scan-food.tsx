@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { View, Pressable, Image, ActivityIndicator, Alert } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
+import { Ionicons } from '@expo/vector-icons'
 import * as ImagePicker from 'expo-image-picker'
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator'
 import { Screen, Text, Card, Button, ProgressBar } from '../../components/ui'
@@ -93,8 +94,9 @@ export default function ScanFood() {
       {phase === 'idle' && (
         <>
           <Card style={{ borderStyle: 'dashed', alignItems: 'center', paddingVertical: spacing.xl }}>
-            <Text variant="subtitle" color={colors.textMuted}>
-              📷 Yemeğini ortala ve çek
+            <Ionicons name="scan-outline" size={44} color={colors.textFaint} />
+            <Text variant="subtitle" color={colors.textMuted} style={{ marginTop: spacing.sm }}>
+              Yemeğini ortala ve çek
             </Text>
             <Text variant="label" style={{ marginTop: spacing.xs }}>
               Tek yemek, iyi ışık — daha doğru sonuç
@@ -125,9 +127,10 @@ export default function ScanFood() {
             />
           )}
           <ActivityIndicator color={colors.accent} />
-          <Text variant="label" style={{ marginTop: spacing.sm }}>
-            Yapay zekâ analiz ediyor…
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: spacing.sm }}>
+            <Ionicons name="sparkles" size={13} color={colors.accent} />
+            <Text variant="label">Yapay zekâ analiz ediyor…</Text>
+          </View>
           <View style={{ width: '100%', marginTop: spacing.md }}>
             <ProgressBar value={0.6} />
           </View>
@@ -146,7 +149,8 @@ export default function ScanFood() {
       {phase === 'error' && (
         <>
           <Card style={{ borderStyle: 'dashed', alignItems: 'center', paddingVertical: spacing.xl }}>
-            <Text variant="subtitle" color={colors.textMuted}>
+            <Ionicons name="alert-circle-outline" size={40} color={colors.textFaint} />
+            <Text variant="subtitle" color={colors.textMuted} style={{ marginTop: spacing.sm }}>
               Yemek bulunamadı
             </Text>
             <Text variant="label" style={{ marginTop: spacing.xs, textAlign: 'center' }}>

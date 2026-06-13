@@ -1,6 +1,7 @@
 // mobile/src/components/nutrition/FoodConfirmCard.tsx
 import { useState } from 'react'
 import { View, Pressable } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
 import { Text, Card, Button, Input, StatChip, Hairline } from '../ui'
 import { colors, spacing } from '../../theme'
 import { portionToPer100g, type ScanResult } from '../../lib/foodScan'
@@ -52,7 +53,10 @@ export function FoodConfirmCard({ result, isSaving, onConfirm, onRetry }: Props)
   return (
     <View>
       <Card>
-        <Text variant="subtitle">{result.yemek_adi}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+          <Ionicons name="restaurant" size={18} color={colors.accent} />
+          <Text variant="subtitle" style={{ flex: 1 }}>{result.yemek_adi}</Text>
+        </View>
 
         <Hairline />
 
