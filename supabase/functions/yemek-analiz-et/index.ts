@@ -8,10 +8,17 @@ const cors = {
 }
 
 const PROMPT =
-  "Bu görseldeki yemeği analiz et. Tahmini porsiyonu gram cinsinden ver ve o porsiyonun " +
-  "TOPLAM kalori ve makrolarını hesapla. SADECE şu alanlara sahip bir JSON döndür: " +
-  "yemek_adi (string), porsiyon_gram (number), kalori (number), protein (number), " +
-  "karbonhidrat (number), yag (number). Görselde tanınır bir yemek yoksa yemek_adi alanını null yap."
+  "Görseli analiz et. İki durum olabilir:\n" +
+  "1) Eğer görselde bir BESİN DEĞERLERİ TABLOSU / ürün etiketi varsa (paketli ürünün arkası), " +
+  "değerleri tablodan BİREBİR oku, TAHMİN ETME. Tabloda değerler 100 gram başına verilmişse " +
+  "porsiyon_gram=100 yap ve kalori/protein/karbonhidrat/yag alanlarını 100 gram için yaz. " +
+  "Etikette bir porsiyon (serving/porsiyon) belirtilmişse porsiyon_gram'ı o porsiyona eşitle ve " +
+  "değerleri o porsiyona göre ver. yemek_adi = paketteki ürün adı.\n" +
+  "2) Eğer tablo yoksa, görseldeki yemeği tanı; tahmini porsiyonu gram cinsinden ver ve o porsiyonun " +
+  "TOPLAM kalori ve makrolarını TAHMİN et.\n" +
+  "SADECE şu alanlara sahip bir JSON döndür: yemek_adi (string), porsiyon_gram (number), " +
+  "kalori (number), protein (number), karbonhidrat (number), yag (number). " +
+  "Ne yemek ne de besin tablosu tanınıyorsa yemek_adi alanını null yap."
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors })

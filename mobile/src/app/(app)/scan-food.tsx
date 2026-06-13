@@ -98,9 +98,15 @@ export default function ScanFood() {
             <Text variant="subtitle" color={colors.textMuted} style={{ marginTop: spacing.sm }}>
               Yemeğini ortala ve çek
             </Text>
-            <Text variant="label" style={{ marginTop: spacing.xs }}>
+            <Text variant="label" style={{ marginTop: spacing.xs, textAlign: 'center' }}>
               Tek yemek, iyi ışık — daha doğru sonuç
             </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: spacing.xs }}>
+              <Ionicons name="pricetag-outline" size={12} color={colors.accent} />
+              <Text variant="label" color={colors.accent}>
+                Paketli üründe arkadaki besin tablosunu çek
+              </Text>
+            </View>
           </Card>
           <Button
             icon="camera"
