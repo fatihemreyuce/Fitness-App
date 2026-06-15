@@ -13,6 +13,7 @@ function tabIcon(focused: IconName, unfocused: IconName) {
 export default function AppLayout() {
   return (
     <Tabs
+      backBehavior="history"
       screenOptions={{
         headerStyle: { backgroundColor: colors.bg },
         headerTitleStyle: { color: colors.text },
