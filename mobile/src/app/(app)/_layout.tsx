@@ -15,9 +15,7 @@ export default function AppLayout() {
     <Tabs
       backBehavior="history"
       screenOptions={{
-        headerStyle: { backgroundColor: colors.bg },
-        headerTitleStyle: { color: colors.text },
-        headerShadowVisible: false,
+        headerShown: false,
         tabBarStyle: { backgroundColor: colors.card, borderTopColor: colors.border },
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textMuted,
