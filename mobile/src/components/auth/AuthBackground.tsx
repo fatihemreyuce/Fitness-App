@@ -4,7 +4,7 @@ import { ImageBackground, KeyboardAvoidingView, Platform, View, Image } from 're
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Text } from '../ui'
 import { colors, spacing } from '../../theme'
-import { FadeOverlay } from './FadeOverlay'
+import { LinearGradient } from 'expo-linear-gradient'
 
 const HERO = require('../../../assets/images/auth-hero.jpg')
 const LOGO = require('../../../assets/images/logo-glow.png')
@@ -12,14 +12,18 @@ const LOGO = require('../../../assets/images/logo-glow.png')
 export function AuthBackground({ children, showTagline = false }: { children: ReactNode; showTagline?: boolean }) {
   return (
     <ImageBackground source={HERO} style={{ flex: 1, backgroundColor: colors.bg }} resizeMode="cover">
-      {/* alt kararma — form/metin okunabilirliği */}
-      <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }} pointerEvents="none">
-        <FadeOverlay height={460} from={0} to={1} />
-      </View>
-      {/* üst kararma — marka kontrastı (yumuşak gradient, sert kenar yok) */}
-      <View style={{ position: 'absolute', left: 0, right: 0, top: 0 }} pointerEvents="none">
-        <FadeOverlay height={240} from={0.6} to={0} />
-      </View>
+      {/* alt kararma — form/metin okunabilirliği (gerçek gradient, banding yok) */}
+      <LinearGradient
+        colors={['transparent', colors.bg]}
+        style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 460 }}
+        pointerEvents="none"
+      />
+      {/* üst kararma — marka kontrastı */}
+      <LinearGradient
+        colors={['rgba(13,15,18,0.6)', 'transparent']}
+        style={{ position: 'absolute', left: 0, right: 0, top: 0, height: 240 }}
+        pointerEvents="none"
+      />
 
       <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
         <KeyboardAvoidingView
