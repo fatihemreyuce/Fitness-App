@@ -1,9 +1,12 @@
+// mobile/src/app/(auth)/signup.tsx
 import { useState } from 'react'
 import { Alert, View } from 'react-native'
 import { Link } from 'expo-router'
 import { supabase } from '../../lib/supabase'
-import { Screen, Text, Input, Button } from '../../components/ui'
-import { GoogleSignInButton } from '../../components/GoogleSignInButton'
+import { AuthBackground } from '../../components/auth/AuthBackground'
+import { AuthField } from '../../components/auth/AuthField'
+import { GoogleAuthButton } from '../../components/auth/GoogleAuthButton'
+import { Text, Button } from '../../components/ui'
 import { colors, spacing } from '../../theme'
 
 export default function Signup() {
@@ -22,17 +25,17 @@ export default function Signup() {
   }
 
   return (
-    <Screen>
-      <View style={{ flex: 1, justifyContent: 'center', gap: spacing.md }}>
-        <Text variant="title" style={{ marginBottom: spacing.sm }}>Kayıt Ol</Text>
-        <Input placeholder="E-posta" autoCapitalize="none" keyboardType="email-address" value={email} onChangeText={setEmail} />
-        <Input placeholder="Şifre (en az 6 karakter)" secureTextEntry value={password} onChangeText={setPassword} />
-        <Button title={loading ? '...' : 'Kayıt Ol'} onPress={signUp} disabled={loading} />
-        <GoogleSignInButton />
-        <Link href="/(auth)/login" style={{ marginTop: spacing.sm }}>
-          <Text variant="label" color={colors.accent} style={{ textAlign: 'center' }}>Zaten hesabın var mı? Giriş yap</Text>
-        </Link>
+    <AuthBackground>
+      <Text variant="title" style={{ marginBottom: spacing.md }}>Kayıt Ol</Text>
+      <View style={{ gap: spacing.md }}>
+        <AuthField icon="mail-outline" placeholder="E-posta" autoCapitalize="none" keyboardType="email-address" value={email} onChangeText={setEmail} />
+        <AuthField icon="lock-closed-outline" placeholder="Şifre (en az 6 karakter)" secure value={password} onChangeText={setPassword} />
+        <Button title={loading ? '...' : 'Kayıt Ol'} onPress={signUp} loading={loading} disabled={loading} />
+        <GoogleAuthButton />
       </View>
-    </Screen>
+      <Link href="/(auth)/login" style={{ marginTop: spacing.lg }}>
+        <Text variant="label" color={colors.accent} style={{ textAlign: 'center' }}>Zaten hesabın var mı? Giriş yap</Text>
+      </Link>
+    </AuthBackground>
   )
 }

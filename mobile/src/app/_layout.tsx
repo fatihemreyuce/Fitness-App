@@ -15,7 +15,7 @@ function RootNavigator() {
     if (loading) return
     const inAuthGroup = segments[0] === '(auth)'
     if (!session && !inAuthGroup) {
-      router.replace('/(auth)/login')
+      router.replace('/(auth)/welcome')
     } else if (session && inAuthGroup) {
       router.replace('/(app)')
     }
