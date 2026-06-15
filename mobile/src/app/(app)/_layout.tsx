@@ -32,6 +32,8 @@ export default function AppLayout() {
       <Tabs.Screen name="add-food" options={{ href: null, title: 'Besin Ekle' }} />
       <Tabs.Screen name="new-food" options={{ href: null, title: 'Özel Besin' }} />
       <Tabs.Screen name="scan-food" options={{ href: null, title: 'AI ile Tara' }} />
+      <Tabs.Screen name="exercise/[id]" options={{ href: null, title: 'Egzersiz' }} />
+      <Tabs.Screen name="new-exercise" options={{ href: null, title: 'Egzersiz Ekle' }} />
     </Tabs>
   )
 }

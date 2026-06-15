@@ -1,40 +1,82 @@
-import { useState } from 'react'
-import { Alert, FlatList, View } from 'react-native'
-import { Screen, Text, Card, Input, Button } from '../../components/ui'
+// mobile/src/app/(app)/exercises.tsx
+import { useMemo, useState } from 'react'
+import { FlatList, View } from 'react-native'
+import { useRouter } from 'expo-router'
+import { Screen, Text, Input, Button, EmptyState } from '../../components/ui'
 import { colors, spacing } from '../../theme'
-import { useExercises, useAddExercise } from '../../lib/queries'
+import { useExercisesWithLastWeight } from '../../lib/queries'
+import { normalizeMuscle, normalizeEquipment, MUSCLE_GROUPS, MUSCLE_OTHER, EQUIPMENT_NONE } from '../../lib/exercises'
+import { ExerciseRow } from '../../components/exercises/ExerciseRow'
+import { MuscleFilter } from '../../components/exercises/MuscleFilter'
+
+const ALL = 'Tümü'
 
 export default function Exercises() {
-  const { data: exercises, isLoading } = useExercises()
-  const addExercise = useAddExercise()
-  const [name, setName] = useState('')
-  const [muscle, setMuscle] = useState('')
+  const { data, isLoading } = useExercisesWithLastWeight()
+  const router = useRouter()
+  const [search, setSearch] = useState('')
+  const [muscle, setMuscle] = useState(ALL)
 
-  function onAdd() {
-    if (!name || !muscle) { Alert.alert('Eksik', 'İsim ve kas grubu gerekli'); return }
-    addExercise.mutate({ name, muscle_group: muscle, equipment: null },
-      { onSuccess: () => { setName(''); setMuscle('') }, onError: (e) => Alert.alert('Hata', String(e)) })
+  const exercises = data?.exercises ?? []
+  const lastWeight = data?.lastWeight ?? {}
+
+  // Veride mevcut kanonik gruplar (MUSCLE_GROUPS sırasında) + 'Diğer' varsa sona; başta 'Tümü'.
+  const groups = useMemo(() => {
+    const present = new Set(exercises.map((e) => normalizeMuscle(e.muscle_group)))
+    const ordered = MUSCLE_GROUPS.filter((g) => present.has(g))
+    const tail = present.has(MUSCLE_OTHER) ? [MUSCLE_OTHER] : []
+    return [ALL, ...ordered, ...tail]
+  }, [exercises])
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLocaleLowerCase('tr-TR')
+    return exercises.filter((e) => {
+      const matchSearch = !q || e.name.toLocaleLowerCase('tr-TR').includes(q)
+      const matchMuscle = muscle === ALL || normalizeMuscle(e.muscle_group) === muscle
+      return matchSearch && matchMuscle
+    })
+  }, [exercises, search, muscle])
+
+  if (isLoading) {
+    return (
+      <Screen>
+        <Text color={colors.textMuted}>Yükleniyor...</Text>
+      </Screen>
+    )
   }
-
-  if (isLoading) return <Screen><Text color={colors.textMuted}>Yükleniyor...</Text></Screen>
 
   return (
     <Screen>
-      <Text variant="title" style={{ marginBottom: spacing.md }}>Egzersizler</Text>
-      <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.lg }}>
-        <Input placeholder="Egzersiz adı" value={name} onChangeText={setName} style={{ flex: 1 }} />
-        <Input placeholder="Kas grubu" value={muscle} onChangeText={setMuscle} style={{ flex: 1 }} />
-        <Button title="Ekle" onPress={onAdd} />
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md }}>
+        <Text variant="title">Egzersizler</Text>
+        <Button icon="add" title="Egzersiz" onPress={() => router.push('/(app)/new-exercise')} style={{ paddingVertical: 9, paddingHorizontal: spacing.md }} />
       </View>
+
+      <Input placeholder="Egzersiz ara…" value={search} onChangeText={setSearch} autoCapitalize="none" />
+
+      <View style={{ marginTop: spacing.sm, marginBottom: spacing.sm }}>
+        <MuscleFilter groups={groups} selected={muscle} onSelect={setMuscle} />
+      </View>
+
       <FlatList
-        data={exercises}
+        data={filtered}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <Card style={{ padding: spacing.md, marginBottom: spacing.sm }}>
-            <Text variant="body">{item.name} {item.owner_id ? '⭐' : ''}</Text>
-            <Text variant="label">{item.muscle_group}{item.equipment ? ` · ${item.equipment}` : ''}</Text>
-          </Card>
-        )}
+        ListEmptyComponent={
+          <EmptyState icon="barbell-outline" label="Egzersiz bulunamadı" hint="Aramayı temizle ya da yeni egzersiz ekle." />
+        }
+        renderItem={({ item }) => {
+          const eq = normalizeEquipment(item.equipment)
+          const subtitle = eq === EQUIPMENT_NONE ? normalizeMuscle(item.muscle_group) : `${normalizeMuscle(item.muscle_group)} · ${eq}`
+          return (
+            <ExerciseRow
+              name={item.name}
+              subtitle={subtitle}
+              lastWeight={item.id in lastWeight ? lastWeight[item.id] : null}
+              isCustom={item.owner_id != null}
+              onPress={() => router.push(`/(app)/exercise/${item.id}`)}
+            />
+          )
+        }}
       />
     </Screen>
   )

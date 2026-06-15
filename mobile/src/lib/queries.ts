@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from './supabase'
 import { weekStartISO, templateDraftSets, type WorkoutRow, type TemplateSetRow, type DraftSet } from './stats'
+import { type HistorySet } from './exercises'
 
 // Oturumdaki kullanıcı id'sini döndürür; oturum yoksa anlaşılır hata fırlatır.
 // (getUser() { user: null } dönebilir — non-null assertion yerine bunu kullan.)
@@ -567,5 +568,81 @@ export function useLogScannedFood() {
       qc.invalidateQueries({ queryKey: ['food_entries', vars.entry_date] })
       qc.invalidateQueries({ queryKey: ['foods'] })
     },
+  })
+}
+
+// === Egzersiz detay & yönetim ===
+
+// Egzersizler + her egzersiz için EN SON kaydedilen set ağırlığı (liste satırı ipucu).
+export function useExercisesWithLastWeight() {
+  return useQuery({
+    queryKey: ['exercises', 'with-last-weight'],
+    queryFn: async (): Promise<{ exercises: Exercise[]; lastWeight: Record<string, number> }> => {
+      const { data: exercises, error } = await supabase.from('exercises').select('*').order('name')
+      if (error) throw error
+      const list = (exercises ?? []) as Exercise[]
+      const ids = list.map((e) => e.id)
+      const lastWeight: Record<string, number> = {}
+      if (ids.length > 0) {
+        const { data: hist, error: hErr } = await supabase
+          .from('workout_sets')
+          .select('exercise_id, weight_kg, created_at')
+          .in('exercise_id', ids)
+          .order('created_at', { ascending: false })
+        if (hErr) throw hErr
+        for (const row of (hist ?? []) as { exercise_id: string; weight_kg: number }[]) {
+          if (!(row.exercise_id in lastWeight)) lastWeight[row.exercise_id] = row.weight_kg
+        }
+      }
+      return { exercises: list, lastWeight }
+    },
+  })
+}
+
+// Tek egzersizin tüm set geçmişi (seans tarihiyle). Detay ekranı saf helper'larla işler.
+export function useExerciseHistory(exerciseId: string) {
+  return useQuery({
+    queryKey: ['exercise_history', exerciseId],
+    enabled: !!exerciseId,
+    queryFn: async (): Promise<HistorySet[]> => {
+      const { data, error } = await supabase
+        .from('workout_sets')
+        .select('reps, weight_kg, set_number, workout:workouts(started_at)')
+        .eq('exercise_id', exerciseId)
+      if (error) throw error
+      type Row = { reps: number; weight_kg: number; set_number: number; workout: { started_at: string } | null }
+      return ((data ?? []) as unknown as Row[])
+        .filter((r) => r.workout != null)
+        .map((r) => ({ reps: r.reps, weight_kg: r.weight_kg, set_number: r.set_number, date: r.workout!.started_at }))
+    },
+  })
+}
+
+// Custom egzersizi günceller (RLS: yalnız owner).
+export function useUpdateExercise() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (input: { id: string; name: string; muscle_group: string; equipment: string | null }) => {
+      await requireUserId()
+      const { error } = await supabase
+        .from('exercises')
+        .update({ name: input.name, muscle_group: input.muscle_group, equipment: input.equipment })
+        .eq('id', input.id)
+      if (error) throw error
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['exercises'] }),
+  })
+}
+
+// Custom egzersizi siler (RLS: yalnız owner).
+export function useDeleteExercise() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await requireUserId()
+      const { error } = await supabase.from('exercises').delete().eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['exercises'] }),
   })
 }
