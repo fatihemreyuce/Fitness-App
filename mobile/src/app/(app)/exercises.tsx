@@ -8,6 +8,7 @@ import { useExercisesWithLastWeight } from '../../lib/queries'
 import { normalizeMuscle, normalizeEquipment, MUSCLE_GROUPS, MUSCLE_OTHER, EQUIPMENT_NONE } from '../../lib/exercises'
 import { ExerciseRow } from '../../components/exercises/ExerciseRow'
 import { MuscleFilter } from '../../components/exercises/MuscleFilter'
+import { ExercisesSkeleton } from '../../components/skeletons/ExercisesSkeleton'
 
 const ALL = 'Tümü'
 
@@ -37,13 +38,7 @@ export default function Exercises() {
     })
   }, [exercises, search, muscle])
 
-  if (isLoading) {
-    return (
-      <Screen>
-        <Text color={colors.textMuted}>Yükleniyor...</Text>
-      </Screen>
-    )
-  }
+  if (isLoading) return <ExercisesSkeleton />
 
   return (
     <Screen>

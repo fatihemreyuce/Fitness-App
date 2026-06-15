@@ -8,18 +8,13 @@ import { workoutSummary, weekMomentum } from '../../lib/stats'
 import { WeekMomentumHero } from '../../components/workouts/WeekMomentumHero'
 import { WorkoutTimelineRow, type TimelineItem } from '../../components/workouts/WorkoutTimelineRow'
 import { TemplatesSection } from '../../components/workouts/TemplatesSection'
+import { WorkoutsSkeleton } from '../../components/skeletons/WorkoutsSkeleton'
 
 export default function Workouts() {
   const { data: workouts, isLoading, refetch } = useWorkouts()
   const router = useRouter()
 
-  if (isLoading) {
-    return (
-      <Screen>
-        <Text color={colors.textMuted}>Yükleniyor...</Text>
-      </Screen>
-    )
-  }
+  if (isLoading) return <WorkoutsSkeleton />
 
   const list = workouts ?? []
   const m = weekMomentum(list, Date.now())

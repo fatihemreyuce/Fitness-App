@@ -8,6 +8,7 @@ import { useDayEntries, useGoals, entryMacros, type MealType } from '../../lib/q
 import { todayISO } from '../../lib/stats'
 import { NutritionHero } from '../../components/nutrition/NutritionHero'
 import { MealSection, type MealItem } from '../../components/nutrition/MealSection'
+import { NutritionSkeleton } from '../../components/skeletons/NutritionSkeleton'
 
 const MEALS: { type: MealType; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
   { type: 'breakfast', label: 'Kahvaltı', icon: 'cafe' },
@@ -36,13 +37,7 @@ export default function Nutrition() {
     return t
   }, [entries])
 
-  if (isLoading) {
-    return (
-      <Screen>
-        <Text color={colors.textMuted}>Yükleniyor...</Text>
-      </Screen>
-    )
-  }
+  if (isLoading) return <NutritionSkeleton />
 
   const calGoal = goals?.daily_calorie_goal && goals.daily_calorie_goal > 0 ? goals.daily_calorie_goal : 2400
   const proteinGoal = goals?.daily_protein_goal && goals.daily_protein_goal > 0 ? goals.daily_protein_goal : 150

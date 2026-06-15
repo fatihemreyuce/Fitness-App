@@ -17,6 +17,7 @@ import {
 } from '../../../lib/exercises'
 import { WeightLineChart } from '../../../components/charts/WeightLineChart'
 import { ExerciseHistoryList } from '../../../components/exercises/ExerciseHistoryList'
+import { DetailSkeleton } from '../../../components/skeletons/DetailSkeleton'
 
 export default function ExerciseDetail() {
   const { id } = useLocalSearchParams<{ id: string }>()
@@ -50,9 +51,10 @@ export default function ExerciseDetail() {
   }
 
   if (!exercise) {
+    if (isLoading) return <DetailSkeleton />
     return (
       <Screen>
-        <Text color={colors.textMuted}>{isLoading ? 'Yükleniyor...' : 'Egzersiz bulunamadı.'}</Text>
+        <Text color={colors.textMuted}>Egzersiz bulunamadı.</Text>
       </Screen>
     )
   }

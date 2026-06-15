@@ -7,6 +7,7 @@ import { useWorkout, useWorkoutSets, useCreateTemplateFromWorkout } from '../../
 import { workoutSummary, groupSetsByExercise } from '../../../lib/stats'
 import { WorkoutStatHeader } from '../../../components/workouts/WorkoutStatHeader'
 import { ExerciseSetGroup } from '../../../components/workouts/ExerciseSetGroup'
+import { DetailSkeleton } from '../../../components/skeletons/DetailSkeleton'
 
 export default function WorkoutDetail() {
   const { id } = useLocalSearchParams<{ id: string }>()
@@ -16,7 +17,7 @@ export default function WorkoutDetail() {
   const [modalOpen, setModalOpen] = useState(false)
   const [tplName, setTplName] = useState('')
 
-  if (isLoading) return <Screen><Text color={colors.textMuted}>Yükleniyor...</Text></Screen>
+  if (isLoading) return <DetailSkeleton />
 
   const list = sets ?? []
   const s = workoutSummary(list)
