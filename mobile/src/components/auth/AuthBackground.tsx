@@ -7,7 +7,7 @@ import { colors, spacing } from '../../theme'
 import { FadeOverlay } from './FadeOverlay'
 
 const HERO = require('../../../assets/images/auth-hero.jpg')
-const LOGO = require('../../../assets/logo-glow.png')
+const LOGO = require('../../../assets/images/logo-glow.png')
 
 export function AuthBackground({ children, showTagline = false }: { children: ReactNode; showTagline?: boolean }) {
   return (
