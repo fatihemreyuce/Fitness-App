@@ -16,11 +16,10 @@ export function AuthBackground({ children, showTagline = false }: { children: Re
       <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }} pointerEvents="none">
         <FadeOverlay height={460} from={0} to={1} />
       </View>
-      {/* üst hafif kararma — marka kontrastı */}
-      <View
-        style={{ position: 'absolute', left: 0, right: 0, top: 0, height: 170, backgroundColor: colors.bg, opacity: 0.35 }}
-        pointerEvents="none"
-      />
+      {/* üst kararma — marka kontrastı (yumuşak gradient, sert kenar yok) */}
+      <View style={{ position: 'absolute', left: 0, right: 0, top: 0 }} pointerEvents="none">
+        <FadeOverlay height={240} from={0.6} to={0} />
+      </View>
 
       <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
         <KeyboardAvoidingView
@@ -31,7 +30,7 @@ export function AuthBackground({ children, showTagline = false }: { children: Re
             <Image source={LOGO} style={{ width: 56, height: 56, borderRadius: 16 }} resizeMode="contain" />
             <Text variant="title" style={{ marginTop: spacing.sm }}>FitLens</Text>
             {showTagline ? (
-              <Text variant="label" color={colors.textMuted} style={{ marginTop: 2 }}>
+              <Text variant="label" color="#d7dce3" style={{ marginTop: 2 }}>
                 Antrenman & beslenme, tek yerde
               </Text>
             ) : null}
