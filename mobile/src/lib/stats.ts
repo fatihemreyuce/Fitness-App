@@ -204,3 +204,58 @@ export function weightChartPoints(entries: BodyWeightRow[], days = 30): number[]
     .filter((e) => parseISODate(e.entry_date).getTime() >= cutoff)
     .map((e) => e.weight_kg)
 }
+
+// === Antrenman haftalık momentum (Antrenmanlar ekranı hero'su) ===
+export type WeekMomentum = {
+  count: number
+  volumeKg: number
+  dayDots: boolean[] // uzunluk 7, Pzt..Paz
+  todayIndex: number // 0..6 (Pzt=0)
+  streakWeeks: number
+}
+
+// Bir timestamp'in ait olduğu haftanın Pazartesi 00:00'ının ms'i (yerel saat).
+function weekMondayMs(ms: number): number {
+  const d = new Date(ms)
+  d.setHours(0, 0, 0, 0)
+  const dow = (d.getDay() + 6) % 7 // Pzt=0 ... Paz=6
+  return d.getTime() - dow * DAY_MS
+}
+
+// Bu haftanın özeti + haftalık seri. Saf; nowMs test edilebilirlik için parametre.
+export function weekMomentum(
+  workouts: { started_at: string; workout_sets: { reps: number; weight_kg: number }[] }[],
+  nowMs: number,
+): WeekMomentum {
+  const thisMon = weekMondayMs(nowMs)
+  const dayDots = [false, false, false, false, false, false, false]
+  const todayIndex = (new Date(nowMs).getDay() + 6) % 7
+  let count = 0
+  let volumeKg = 0
+  const activeWeeks = new Set<number>()
+
+  for (const w of workouts ?? []) {
+    const t = Date.parse(w.started_at)
+    if (!Number.isFinite(t)) continue
+    const wm = weekMondayMs(t)
+    activeWeeks.add(wm)
+    if (wm === thisMon) {
+      const dow = (new Date(t).getDay() + 6) % 7
+      dayDots[dow] = true
+      count++
+      volumeKg += workoutVolume(w.workout_sets)
+    }
+  }
+
+  // Seri: en son aktif haftadan geriye kesintisiz aktif hafta sayısı.
+  let streakWeeks = 0
+  if (activeWeeks.size > 0) {
+    let cur = Math.max(...activeWeeks)
+    while (activeWeeks.has(cur)) {
+      streakWeeks++
+      cur = weekMondayMs(cur - DAY_MS)
+    }
+  }
+
+  return { count, volumeKg, dayDots, todayIndex, streakWeeks }
+}
